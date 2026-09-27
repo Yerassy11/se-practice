@@ -1,0 +1,40 @@
+# week-03/submission.yml — declaration for Practice #03
+schema: 1
+week: "03"
+
+student:
+  name: Yerassyl Khudaibergen
+  student_id: 24B032101
+  github: Yerassy11
+
+assistant:
+  tool: ChatGPT
+  model: GPT-5.6 Sol
+
+counts:
+  user_stories: 6
+  acceptance_criteria_sets: 3
+
+checker:
+  pass: 23
+  fail: 0
+  error: 0
+  commit: 6174abd
+
+assumptions:
+  overlap_touching_bookings: allowed
+  exactly_two_hours: allowed
+
+traceability:
+  use_cases_not_covered: []
+  stories_not_traced: []
+
+review_findings:
+  - US-07 in the original generation introduced reminder notifications, which are explicitly out of scope, so that story was deleted.
+  - AC-04 originally used a normal 90-minute success case and missed the exactly-two-hour boundary, so the final AC-04 tests that boundary directly.
+  - UC-06 originally had direct Student and Administrator associations even though confirmation is triggered by the system, so those actor links were removed.
+  - UC-05 originally had a Student association even though Review usage belongs to the Administrator, so the Student link was removed.
+
+honesty:
+  can_explain_everything_submitted: yes
+  ai_usage_disclosed: yes

@@ -332,19 +332,18 @@ PASS   honesty.can_explain_everything_submitted  no
 NOTE   honesty.can_explain_everything_submitted  an honest no costs you nothing here — name the part in lab-report.md
 PASS   honesty.ai_usage_disclosed                yes
 ------------------------------------------------------------------------
-20 PASS · 2 FAIL · 0 ERROR · 3 note
-Fix the FAIL and ERROR lines above, then run this again before you push.
+22 PASS · 0 FAIL · 0 ERROR · 2 note
+Shape is fine. This says nothing about whether the work is good.
 ```
 
 | | PASS | FAIL | ERROR |
 | --- | --- | --- | --- |
 | `check_requirements.py` | 23 | 0 | 0 |
 
-Commit these numbers were produced at (`git rev-parse --short HEAD`): **fill with the real commit hash after placing these files in your repository and committing them.**
+Commit these numbers were produced at (`git rev-parse --short HEAD`): 6174abd
 
 **Every FAIL, one line each: what it is and what you decided to do about it.**
-- `student.student_id`: left empty because the exact KBTU student ID was not provided; enter the real ID before submission.
-- `checker.commit`: left empty because only the commit in the student's actual repository is valid; run `git rev-parse --short HEAD`, enter it, then rerun both checkers.
+- None. Both checkers completed without FAIL or ERROR.
 
 **Did you run the checks by hand instead of with Python?** No. Both supplied Python checkers were executed.
 
