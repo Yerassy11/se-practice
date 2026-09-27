@@ -263,7 +263,7 @@ Summarise what the table in `requirements/traceability.md` shows:
 - Stories with **no use case** they belong to: none.
 - Criteria that test **no business rule R1–R4** from section 1: AC-01, AC-09, AC-10, AC-11. These criteria still test fixed use-case behavior such as availability or cancellation.
 
-**What does the largest gap tell you about the generated requirements?** The largest gap is acceptance-criteria coverage: UC-04, UC-05 and UC-06 have stories but no dedicated acceptance-criteria set because the task requires criteria for only three selected stories. The traceability table makes this visible without inventing extra criteria just to make every row look complete.
+**What does the largest gap tell you about the generated requirements?** The largest gap is acceptance-criteria coverage for UC-04 and UC-05, which have supporting stories but no criteria because the task requires criteria for only three selected stories. UC-06 has no dedicated acceptance-criteria set, but its successful behavior is tested indirectly by AC-04 and AC-09. The traceability table makes these gaps visible without inventing extra criteria just to make every row look complete.
 
 ---
 

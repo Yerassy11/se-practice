@@ -7,8 +7,7 @@
 | UC-03 Cancel booking | US-03 | AC-09, AC-10, AC-11 | No |
 | UC-04 Block or unblock room | US-04 | none | Yes — no acceptance criteria were selected for this story. |
 | UC-05 Review usage | US-05 | none | Yes — no acceptance criteria were selected for this story. |
-| UC-06 Send confirmation | US-06 | none | Yes — no separate acceptance-criteria set was selected for this story. |
-
+| UC-06 Send confirmation | US-06 | AC-04, AC-09 | No — covered through successful booking and cancellation criteria. |
 **Stories that belong to no use case:** none
 
-**What the gaps tell you:** All six use cases have a supporting user story, but only the three selected stories have detailed acceptance criteria. UC-04, UC-05, and UC-06 would need criteria before implementation if they were included in the next development scope.
+**What the gaps tell you:** All six use cases have a supporting user story. UC-04 and UC-05 have no acceptance criteria because the task requires criteria for only three selected stories. UC-06 has no dedicated criteria set, but its successful behavior is tested indirectly by AC-04 and AC-09.
