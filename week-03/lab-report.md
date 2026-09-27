@@ -20,7 +20,6 @@ GitHub username: Yerassy11
 
 One tool and one model were used for all three required prompts.
 
--Yes,didn't swtiched
 
 --- 
 
@@ -236,7 +235,7 @@ UC03 ..> UC06 : <<include>>
 @enduml
 ```
 
-Rendered diagram (image, or a link): `requirements/use-cases.svg`
+![Rendered use-case diagram](requirements/use-cases.svg)
 
 ---
 

@@ -18,7 +18,6 @@ Yes. ChatGPT with GPT-5.6 Sol was also used to review the generated outputs, pre
 **Everything I submitted, I can explain and defend in class:** Yes
 
 **Anything I accepted from the AI without fully understanding it:**
-The generated files should be reviewed before submission, especially the use-case associations, the acceptance-criteria mapping, and the final checker/commit fields. After reviewing these parts, this answer can be changed to "yes" if accurate.
-
+None. I reviewed the use-case associations, acceptance-criteria mapping, checker results and commit fields, and I can explain and defend them.
 Signed: Yerassyl Khudaibergen
 Date: 2026-09-26
