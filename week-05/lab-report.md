@@ -89,17 +89,38 @@ Base input for every row unless the row says otherwise: `now=540, blocked=False,
 
 | # | Test name | Request (start, end) | What differs from the base input | Expected | AC | Result on v1 | Result on final |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | | | |
-| 2 | | | | | | | |
-| 3 | | | | | | | |
-| 4 | | | | | | | |
-| 5 | | | | | | | |
-| 6 | | | | | | | |
-| 7 | | | | | | | |
-| 8 | | | | | | | |
-| 9 | | | | | | | |
-| 10 | | | | | | | |
-| 11 | | | | | | | |
+| 1 | `test_touching_end_is_allowed` | `(660, 720)` | base | `True` | AC4 | FAIL (False) | PASS |
+| 2 | `test_partial_overlap_rejected` | `(630, 690)` | base | `False` | AC4 | PASS | PASS |
+| 3 | `test_blocked_room_rejected` | `(660, 720)` | blocked=True | `False` | AC3 | PASS | PASS |
+| 4 | `test_exactly_120_minutes_allowed` | `(720, 840)` | base | `True` | AC2 | PASS | PASS |
+| 5 | `test_121_minutes_rejected` | `(720, 841)` | base | `False` | AC2 | PASS | PASS |
+| 6 | `test_start_equal_now_rejected` | `(540, 570)` | base | `False` | AC1 | PASS | PASS |
+| 7 | `test_zero_length_rejected` | `(700, 700)` | base | `False` | AC1 | PASS | PASS |
+| 8 | `test_reversed_times_rejected` | `(720, 700)` | base | `False` | AC1 | PASS | PASS |
+| 9 | `test_end_at_1440_allowed` | `(1380, 1440)` | base | `True` | AC1 | PASS | PASS |
+| 10 | `test_end_after_1440_rejected` | `(1380, 1441)` | base | `False` | AC1 | PASS | PASS |
+| 11 | `test_negative_start_rejected` | `(-1, 30)` | base; start <= now also fails | `False` | AC1 | PASS | PASS |
+| 12 | `test_start_at_zero_now_zero_rejected` | `(0, 60)` | now=0; existing=[] | `False` | AC1 | PASS | PASS |
+| 13 | `test_one_minute_after_now_allowed` | `(541, 571)` | base | `True` | AC1 | PASS | PASS |
+| 14 | `test_start_one_now_zero_allowed` | `(1, 61)` | now=0; existing=[] | `True` | AC1 | PASS | PASS |
+| 15 | `test_past_start_rejected` | `(500, 530)` | base | `False` | AC1 | PASS | PASS |
+| 16 | `test_one_minute_duration_allowed` | `(720, 721)` | base | `True` | AC2 | PASS | PASS |
+| 17 | `test_119_minutes_allowed` | `(720, 839)` | base | `True` | AC2 | PASS | PASS |
+| 18 | `test_blocked_with_empty_bookings_rejected` | `(660, 720)` | blocked=True; existing=[] | `False` | AC3 | PASS | PASS |
+| 19 | `test_empty_existing_allowed` | `(600, 660)` | existing=[] | `True` | AC4 | PASS | PASS |
+| 20 | `test_overlap_second_booking_rejected` | `(720, 780)` | existing has two intervals | `False` | AC4 | PASS | PASS |
+| 21 | `test_unsorted_existing_second_overlap_rejected` | `(610, 650)` | existing unsorted | `False` | AC4 | PASS | PASS |
+| 22 | `test_touch_both_neighbours_allowed` | `(660, 720)` | existing has two touching intervals | `True` | AC4 | FAIL (False) | PASS |
+| 23 | `test_entirely_inside_rejected` | `(615, 645)` | base | `False` | AC4 | PASS | PASS |
+| 24 | `test_contains_existing_rejected` | `(570, 690)` | base | `False` | AC4 | PASS | PASS |
+| 25 | `test_identical_interval_rejected` | `(600, 660)` | base | `False` | AC4 | PASS | PASS |
+| 26 | `test_touch_existing_start_allowed` | `(570, 600)` | base | `True` | AC4 | FAIL (False) | PASS |
+| 27 | `test_partial_overlap_on_start_rejected` | `(570, 630)` | base | `False` | AC4 | PASS | PASS |
+| 28 | `test_free_gap_among_three_allowed` | `(760, 800)` | existing has three intervals | `True` | AC4 | FAIL (False) | PASS |
+| 29 | `test_return_bool_true` | `(660, 720)` | base | `True` | AC5 | FAIL (False) | PASS |
+| 30 | `test_return_bool_false` | `(630, 690)` | base | `False` | AC5 | PASS | PASS |
+| 31 | `test_accepted_existing_list_unchanged` | `(780, 840)` | `existing=[(900, 960), (600, 660), (700, 760)]`; compare snapshot after call | `True` and unchanged | AC5 | PASS | PASS |
+| 32 | `test_rejected_existing_list_unchanged` | `(610, 650)` | `existing=[(900, 960), (600, 660), (700, 760)]`; compare snapshot after call | `False` and unchanged | AC5 | PASS | PASS |
 
 ---
 
@@ -109,9 +130,17 @@ One row per defect you found — in v1, in a later version, or in your own tests
 everything, the row is the **new edge case you added**, with expected and actual equal, and the
 cause column says why no change was needed.
 
+The initial implementation was run using an isolated copy of the same 32-test suite. Five tests failed, all because AC4 used inclusive comparisons. The unchanged first draft remains in `code/original/booking_v1.py`.
+
+
 | # | Input (the full call) | Expected | Actual | Cause (quote the line) | Fix | Who proposed the fix |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | | |
+| 1 | `can_book(660, 720, 540, False, [(600, 660)])` | `True` | `False` | v1: `if start <= booked_end and end >= booked_start:` treats equality as overlap. | Use `start < booked_end and end > booked_start`. | Derived from AC4 and the half-open interval definition, with AI assistance. |
+| 2 | `can_book(570, 600, 540, False, [(600, 660)])` | `True` | `False` | The same v1 line rejects a request whose end equals an existing start. | Both comparisons must be strict. | Derived from AC4; confirmed by `test_touch_existing_start_allowed`. |
+| 3 | `can_book(660, 720, 540, False, [(600, 660), (720, 780)])` | `True` | `False` | The same v1 line rejects both touching neighbours. | Keep the strict comparison inside the loop. | Derived from AC4; confirmed by `test_touch_both_neighbours_allowed`. |
+| 4 | `can_book(760, 800, 540, False, [(600, 660), (700, 760), (800, 860)])` | `True` | `False` | v1 rejects touching on each side of the free gap. | Same strict overlap formula. | Derived from AC4; confirmed by `test_free_gap_among_three_allowed`. |
+
+`test_return_bool_true` also failed on v1 because that test uses the same touching request as row 1; it is not a separate underlying defect.
 
 **The debug prompt I sent, and the assistant's answer** (leave the block empty if you did not use it):
 
