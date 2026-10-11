@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+title Smart Campus Study Room Booking - Use Cases
+
+actor Student
+actor Administrator
+
+rectangle "Smart Campus Study Room Booking System" {
+  usecase "View availability" as UC1
+  usecase "Book room" as UC2
+  usecase "Cancel booking" as UC3
+  usecase "Block or unblock room" as UC4
+  usecase "Review usage" as UC5
+  usecase "Send booking confirmation" as UC6
+}
+
+Student -- UC1
+Student -- UC2
+Student -- UC3
+Administrator -- UC4
+Administrator -- UC5
+
+' why: R4 requires a confirmation after every successful booking
+UC2 .> UC6 : <<include>>
+
+' Assumptions:
+' A1: Touching bookings are allowed; an end time equal to the next start time is not an overlap.
+' A2: Blocking a room keeps existing bookings but prevents new bookings while the room is blocked.
+@enduml

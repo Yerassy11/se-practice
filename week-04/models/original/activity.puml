@@ -1,0 +1,12 @@
+@startuml
+title Book room activity
+start
+:Student requests a booking;
+:Create booking;
+if (All booking rules pass?) then (yes)
+  :Send confirmation;
+else (no)
+  :Reject booking;
+endif
+stop
+@enduml

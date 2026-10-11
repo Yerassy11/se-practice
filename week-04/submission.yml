@@ -1,0 +1,46 @@
+# week-04/submission.yml — declaration for this lab.
+# Personal repository fields marked below must be replaced with the student's exact values before push.
+
+schema: 1
+week: "04"
+
+student:
+  name: "Yerassyl Khudaibergen"
+  student_id: "24B032101"
+  github:"Yerassy11"
+
+assistant:
+  tool: ChatGPT
+  model: GPT-5.6 Sol
+
+counts:
+  behaviour_diagram: activity
+  stories_source: week-03
+  use_cases: 6
+  change_log_rows: 5
+
+checker:
+  pass: 35
+  fail: 0
+  error: 0
+  commit: 083bdcb
+  kept_fails: []
+
+assumptions:
+  overlap_touching_bookings: allowed
+  blocking_a_booked_room: keep-bookings
+
+traceability:
+  use_cases_not_traced: []
+  rules_not_shown: []
+
+review_findings:
+  - Student to Send booking confirmation was removed because R4 makes confirmation an automatic booking outcome, not a separate actor-triggered goal.
+  - Room to Booking composition was replaced by a plain 1 to 0..* association because a Room can exist with zero bookings and does not lifecycle-own Booking.
+  - The activity now checks R1, R3 and R2 before Create booking so invalid requests never create a Booking.
+  - Administrator to Cancel booking was removed because US-03 and the scenario give cancellation only to the Student for their own booking.
+
+honesty:
+  originals_unedited: yes
+  can_explain_everything_submitted: yes
+  ai_usage_disclosed: yes

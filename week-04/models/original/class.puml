@@ -1,0 +1,32 @@
+@startuml
+class Student {
+  studentId: String
+  bookRoom()
+  cancelBooking()
+}
+
+class Room {
+  roomId: String
+  blocked: Boolean
+}
+
+class Booking {
+  bookingId: String
+  startTime: DateTime
+  endTime: DateTime
+  status: String
+}
+
+class BookingService {
+  createBooking()
+  checkAvailability()
+}
+
+Student "1" -- "0..*" Booking
+Room "1" *-- "1..*" Booking
+BookingService --> Booking
+
+' Assumptions:
+' - A room owns its bookings.
+' - A room always has at least one booking record.
+@enduml
