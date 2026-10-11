@@ -45,31 +45,41 @@ row saying which lines of the plan you checked against which AC.
 
 | # | What the plan said | What the contract or the AC says | What I did |
 | --- | --- | --- | --- |
-| 1 | | | |
-
+| 1 | Validate 0 <= start < end <= 1440 and start > now | AC1 says exactly this. | Kept both validations; no extra rule was introduced. |
+| 2 | Permit duration 120 and reject 121 | AC2 says duration is at most 120 minutes. | Kept an inclusive 120-minute maximum. |
+| 3 | Use two strict inequalities for interval overlap | AC4 permits touching endpoints; the intervals exclude their ends. | Verified the inequalities by hand against both touching directions. |
+| 4 | Do not save, sort, or change the booking collection | AC5 requires all inputs unchanged; storing and confirmation are outside this feature. | Did not introduce persistence, sorting or confirmation. |
 **Boundary cases the assistant suggested that I kept as tests:**
 
--
+- `test_touching_end_is_allowed`, `test_touch_existing_start_allowed`, and `test_touch_both_neighbours_allowed` (AC4).
+- `test_exactly_120_minutes_allowed` and `test_121_minutes_rejected` (AC2).
+- `test_end_at_1440_allowed`, `test_end_after_1440_rejected`, and `test_start_equal_now_rejected` (AC1).
+- `test_unsorted_existing_second_overlap_rejected` and the two unchanged-input tests (AC4, AC5).
+
 
 ---
 
 ## 3. Task 2 — the first version (v1), read before it was run
 
-v1 is saved as `code/original/booking_v1.<ext>`, exactly as the assistant returned it: yes / no
+v1 is saved as `code/original/booking_v1.<ext>`, exactly as the assistant returned it: yes 
 
 **AC map.** One row per condition in v1. Quote the line.
 
 | # | Line in v1 | AC it implements | Correct as written? If not, why |
 | --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
+| 1 | `if not (0 <= start < end <= 1440):` | AC1 | Yes: checks valid order and date bounds. |
+| 2 | `if start <= now:` | AC1 | Yes: disallows starting now or earlier. |
+| 3 | `if end - start > 120:` | AC2 | Yes: permits exactly 120 minutes. |
+| 4 | `if blocked:` | AC3 | Yes: rejects a blocked room. |
+| 5 | `for booked_start, booked_end in existing:` | AC4 | Yes: examines every active booking for the selected room. |
+| 6 | `if start <= booked_end and end >= booked_start:` | AC4 | **No:** `<=` and `>=` also reject endpoints that merely touch; AC4 explicitly allows those requests. |
+| 7 | `return False` (on each failed condition) / `return True` (after the loop) | AC5 | Yes: returns Booleans, has no saving side effect; the faulty AC4 condition can still produce the wrong decision. |
 
 **Anything in v1 that no AC asks for** (extra validation, a buffer between bookings, logging,
 saving the booking, a different return type):
 
--
+- None: the extra function contains no persistence, notification, sorting, waiting, or additional room checks. The issue is an incorrect AC4 inequality, not an invented feature.
+
 
 ---
 
