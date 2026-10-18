@@ -84,11 +84,9 @@ Database: Stores course offerings and Enrollment records, performs availability 
 
 | Association | Read left to right | Read right to left |
 | --- | --- | --- |
-| Course "1" -- "0..*" CourseOffering : has | One Course can have zero or many CourseOfferings. | Each CourseOffering belongs to exactly one Course. |
-| Each CourseOffering belongs to exactly one Course.
-
-Student "1" -- "0..*" Enrollment : makes | One Student can have zero or many Enrollments. | Each Enrollment belongs to exactly one Student |
-| CourseOffering "1" -- "0..*" Enrollment : receives | One CourseOffering can have zero or many Enrollments. | Each Enrollment belongs to exactly one CoOne CourseOffering can have zero or many Enrollments.urseOffering. |
+| `Course "1" -- "0..*" CourseOffering : has` | One Course can have zero or many CourseOffering instances. | Each CourseOffering belongs to exactly one Course. |
+| `Student "1" -- "0..*" Enrollment : makes` | One Student can have zero or many Enrollment records. | Each Enrollment belongs to exactly one Student. |
+| `CourseOffering "1" -- "0..*" Enrollment : receives` | One CourseOffering can have zero or many Enrollment records. | Each Enrollment belongs to exactly one CourseOffering. |
 
 **How an Enrollment links a student to an offering:** The Enrollment class connects a Student to a specific CourseOffering through two associations. Every Enrollment belongs to exactly one Student and exactly one CourseOffering. The enrollmentId identifies the enrollment record, while studentId and offeringId identify the related student and offering in their respective classes. This structure allows students to enroll in different offerings while preventing duplicate registration for the same pair.
 
@@ -106,13 +104,11 @@ Multiplicity alone cannot enforce this condition because both Student and Course
 
 | Rule and criterion | Model evidence | Validation case |
 | --- | --- | --- |
-| R1 + AC-01, AC-02 | 02
-
-Sequence: getOfferings(semesterId), Course codes, titles, offerings, counts, Display catalog (AC-01). Class: Course.courseCode, Course.title, CourseOffering.semester, /availablePlaces, and the R1 catalog note. Catalog browsing does not create Enrollment |Additional R1 catalog inspection; T3 confirms catalog information is not reserved availability. |
-| R2 +  AC-02, AC-03, AC-04, AC-05 |Sequence: Begin atomic registration, Check current availability (AC-02), Course full (AC-05) and the atomic transaction note. Class: capacity, /enrollmentCount, /availablePlaces and the R2 capacity note| T1, T2, T3 |
-| R3 + AC-03, AC-06 | Sequence: Check existing Enrollment, Already enrolled (AC-06). Class: R3 uniqueness note restricting each Student–CourseOffering pair to one Enrollment.| T1, T4 |
-| R4 + AC-03, AC-04 | Sequence: Create exactly one Enrollment, Recalculate availability from Enrollment records, followed by Registration confirmed, updated availability. Class: Enrollment associations to Student and CourseOffering. | T1, T2 |
-| R5 +  AC-05, AC-06 |Sequence: Already enrolled (AC-06) and Course full (AC-05) branches return specific messages. Both rejection notes state No new Enrollment and Enrollment count unchanged. | T3, T4 |
+| R1 + AC-01, AC-02 | Sequence: `getOfferings(semesterId)`, `Display catalog (AC-01)`. Class: `Course.courseCode`, `Course.title`, `CourseOffering.semester` and `/availablePlaces`. Browsing creates no Enrollment. | Additional R1 catalog inspection and T1 catalog browsing. |
+| R2 + AC-02, AC-03, AC-04, AC-05 | Sequence: `Begin atomic registration`, `Check current availability (AC-02)`. Class: `capacity`, `/enrollmentCount`, `/availablePlaces` and the R2 capacity constraint. | T1, T2, T3 |
+| R3 + AC-03, AC-06 | Sequence: `Check existing Enrollment` and `Already enrolled (AC-06)`. Class: R3 uniqueness note for the Student and CourseOffering pair. | T4 |
+| R4 + AC-03, AC-04 | Sequence: `Create exactly one Enrollment`, `Recalculate availability from Enrollment records` and `Registration confirmed, updated availability`. | T1, T2 |
+| R5 + AC-05, AC-06 | Sequence: `Course full (AC-05)` and `Already enrolled (AC-06)`. Both rejection branches create no Enrollment and preserve the enrollment count. | T3, T4 |
 
 ## 6. Walkthroughs
 
@@ -137,12 +133,10 @@ Sequence: getOfferings(semesterId), Course codes, titles, offerings, counts, Dis
 
 | AI suggestion or model element | Decision | Reason | Rule |
 | --- | --- | --- | --- |
-| D1 — Sequence: Begin atomic registration, transaction and row locking | Modified — clarify atomicity; reject mandatory row-lock implementation details | The assignment requires the final checks and Enrollment creation to be atomic. An atomic note is sufficient for the UML model, so a specific database locking mechanism is not necessary. The note should clearly explain that concurrent requests cannot take the same last place. | R2, R4 |
-| D2 — Sequence: Update enrollment count versus Class: /enrollmentCount and /availablePlaces | Modified — clarify that availability is recalculated from Enrollment records | availability is recalculated from Enrollment records
-
-The class diagram defines enrollment count and available places as derived values. The sequence should not imply that an independent stored counter is updated. After creating one Enrollment, the available places must be recalculated and the new value returned | R2, R4 |
-| C1 — Sequence: capacity check before duplicate check | Rejected as a defect; optional clarification accepted | Both checks can occur before the final decision without violating the rules. The important requirement is that a duplicate request receives the correct rejection message and creates no Enrollment. Checking duplicates first may improve clarity, but it is not mandatory. | R3, R5 |
-|C2 — Class: UNIQUE(studentId, offeringId) constraint|Modified — describe uniqueness using the Student–CourseOffering pair|The Enrollment associations already identify the related student and offering. Adding foreign-key attributes is not required in a conceptual class diagram. A clear note stating that each Student–CourseOffering pair can have at most one Enrollment is sufficient. | R3 |
+| D1 — Begin atomic registration and database row locking | Modified — retain atomic note | The sequence already describes atomic checks and Enrollment creation. Database row locking is one possible implementation, but the assignment does not require a specific locking mechanism. | R2, R4 |
+| D2 — Derived enrollment count and availability | Accepted — recalculate availability | The class diagram defines enrollment count and available places as derived values. The sequence now recalculates availability from Enrollment records instead of updating a separate stored counter. | R2, R4 |
+| C1 — Change the order of duplicate and capacity checks | Rejected — preserve existing checks | Both checks occur after the registration request and before Enrollment creation. The existing guarded alternatives already prioritize the already-enrolled rejection when both conditions apply. | R3, R5 |
+| C2 — Add database foreign-key attributes for uniqueness | Modified — use domain constraint note | The class associations already connect each Enrollment to one Student and one CourseOffering. A separate uniqueness note expresses the pairwise constraint without implementation-specific attributes. | R3 |
 
 ## 8. Modeling explanation
 
@@ -199,7 +193,7 @@ This task demonstrates that AI can support UML modeling, but responsibility for 
 
 - **Tool:** ChatGPT
 - **Model:** GPT-6 Astra
-- **Date:** 18.10.2026
+- **Date:** 2026-10-18
 - **Purpose:** draft 3 user stories and 6 acceptance criteria
 
 <!-- Model: the exact model with its version, as the tool shows it (e.g. "GPT-5 Thinking",
@@ -307,7 +301,7 @@ These uncertainties require clarification and are not treated as additional requ
 
 - **Tool:** ChatGPT
 - **Model:** GPT-6 Astra
-- **Date:** 18.10.2026
+- **Date:** 2026-10-18
 - **Purpose:** draft the sequence and class diagrams
 
 **Prompt:**
@@ -548,7 +542,7 @@ Both diagrams are aligned with US-01–US-03, AC-01–AC-06, and R1–R5.
 
 - **Tool:** ChatGPT
 - **Model:** GPT-6 Astra
-- **Date:** 18.10.2026
+- **Date:** 2026-10-18
 - **Purpose:** review both models against R1–R5 and T1–T4
 
 **Prompt:**
@@ -809,7 +803,7 @@ Conclusion: The models do not need major restructuring. Correct the derived-coun
 
 - **Tool:** ChatGPT
 - **Model:** GPT-6 Astra
-- **Date:** 18.10.2026
+- **Date:** 2026-10-18
 - **Purpose:** apply my accepted review decisions
 
 **Prompt:**
