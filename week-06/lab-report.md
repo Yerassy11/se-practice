@@ -138,13 +138,49 @@ in) and Bolt's answer, unedited.
 **Functional fix prompt, as sent, and Bolt's answer:**
 
 ```text
-(paste here)
+In the current prototype, opening the room availability checker produces a list of multiple selectable rooms, but AC6 requires a responsive checker for the selected room and the specified scope is one selected room only. Make the smallest change that fixes this behavior. Preserve the other acceptance criteria. Explain which file/component you changed and why.
+
+626f6c742d63632d6167656e74The issue: `RoomSelector` renders a list of multiple selectable room cards, but the scope is one selected room. The smallest fix is to change that component from a list of buttons into a single dropdown — the app already tracks one `selectedId`, so only the presentation changes.Now update the CSS — replace the multi-card styling with single-select styling.Also update the responsive rule that referenced the old selector's max-height.Build passes. The checker now opens showing one selected room, not a multi-room list.
+
+**What changed:** `src/components/RoomSelector.tsx` — replaced the list of selectable room cards (a `radiogroup` of buttons) with a single dropdown `<select>`. The component keeps the same props (`rooms`, `selectedId`, `onSelect`), so `App.tsx` needed no changes. I also updated the matching styles in `src/index.css` and removed a now-unused responsive rule.
+
+**Why:** The app already tracked one `selectedId` and ran the availability check against that single room; only the picker presentation was wrong. A dropdown makes the "one selected room" scope visually unambiguous while preserving AC1–AC5 (the check logic is untouched) and AC6 (the dropdown works at desktop and mobile widths).
 ```
 
 **Cleanup prompt, as sent, and Bolt's answer:**
 
 ```text
-(paste here)
+Review only the room availability validation component for unnecessary duplication, confusing naming, or UI feedback problems. Suggest one small cleanup. Do not add features or redesign the whole application. Implement it only if it preserves AC1–AC6.
+
+I'll review the validation path: checkAvailability.ts, DecisionPanel.tsx, BookingForm.tsx, and App.tsx.
+
+
+0123456789
+ files read
+I found one UI feedback problem worth fixing.
+
+Issue: App.tsx parses startTime/endTime into minutes in handleSubmit, and separately parses them again inside the candidate useMemo (lines 22–27). The form's required attribute only guards against empty fields — if a user types a valid-looking but out-of-range value (e.g. end before start, or a 200-minute interval), there's no inline feedback until they submit. More importantly, the handleSubmit path passes raw parsed values to checkAvailability but doesn't clear a stale result if the user edits the form after a previous check — the old decision stays visible, which is misleading.
+
+The smallest cleanup that preserves AC1–AC6: clear the displayed decision whenever the user changes any form input or the selected room (already done for room changes, not for form edits). This prevents a stale Available/Unavailable from confusing the user while they adjust times — a direct AC6 improvement ("understandable validation feedback").
+
+
+0123456789
+ file edits
+Now wire the form-edit handlers to clear a stale result too.
+
+
+0123456789
+ actions taken
+Now simplify handleReset to reuse clearResult.
+
+
+0123456789
+ actions taken
+Build passes.
+
+Review findings: The validation logic in checkAvailability.ts is clean — no duplication, clear AC comments, correct ordering. DecisionPanel is fine. The one real issue was a UI feedback problem in App.tsx: after a check produced an Available/Unavailable decision, editing any form field left the stale decision on screen, which is misleading (AC6 wants understandable validation feedback).
+
+Cleanup applied (one file: src/App.tsx): Extracted a clearResult() helper and called it from every input change handler, the room selector, and reset — so the decision clears the moment the user starts editing, then reappears (fresh) only after they press Check availability again. This also removed the duplicated setResult(null); setSubmitted(false) pair that was written inline in three places. No rules logic touc
 ```
 
 Add further blocks for further prompts.
@@ -154,8 +190,8 @@ the AC (or the scope) that justifies it.
 
 | # | What Bolt changed or suggested | accept / reject | Reason — cite the AC or the scope | Retest: which cases, result |
 | --- | --- | --- | --- | --- |
-| 1 | | accept / reject | | |
-| 2 | | accept / reject | | |
+| 1 | | accept  |Simplifies the interface and supports AC6, but still allows switching between multiple rooms. It does not fully remove the scope concern.|Check room selection, T3 and T9; record actual results|
+| 2 | | accept Required to keep the revised selector usable at desktop and mobile widths (AC6).|T9 at 375 px|
 
 ---
 
@@ -165,8 +201,8 @@ Two to four concrete changes, each one retested.
 
 | # | Issue | Decision | Change (file or component) | Result after retest |
 | --- | --- | --- | --- | --- |
-| 1 | | | | |
-| 2 | | | | |
+| 1 |Multiple room cards made the one-room scope unclear|Accept |src/components/RoomSelector.tsx: replaced cards with dropdown |Record whether the selector works and whether the scope concern remains|
+| 2 |Selector styling needed updating | Accept |src/index.css: added dropdown styling and updated responsive rules |Record T9 result at 375 px |
 
 ---
 
@@ -176,10 +212,10 @@ Pick one file or component Bolt generated that matters for AC1–AC5 — the one
 availability is the best choice. Name its path in backticks, then explain in your own words, without
 the assistant, what it does and how it decides. 60 words or more.
 
-**File:** `(write here, e.g. src/App.tsx)`
+**File:** `C:\Users\Acer\Downloads\se-practice\week-06\prototype\project\src\lib\checkAvailability.ts`
 
 <!-- Write your explanation below this line -->
-
+The `checkAvailability.ts` file is responsible for checking whether a requested time interval is valid. It receives the selected room information, the requested start and end times, and the current time. First, it checks if the time interval is valid and starts in the future (AC1). It also checks that the duration does not exceed 120 minutes (AC2). Then it checks whether the room is blocked (AC3). After that, it compares the requested interval with existing bookings to prevent overlapping reservations while allowing touching endpoints (AC4). Finally, it returns an availability decision without modifying the existing bookings (AC5). The application uses this result to display feedback to the user.
 ---
 
 ## 9. What still fails, and what the criteria do not say
@@ -198,14 +234,14 @@ AC1 allows `end ≤ 1440` — a booking may end at 24:00. Can a user of your fin
 23:00–24:00? How — and if not, why is that acceptable or not? (This is the value you declare in
 `submission.yml` under `assumptions.end_of_day`.)
 
--
+-The final page does not provide a way to select 24:00 using the standard time input. The latest selectable time is 23:59. Therefore, a user cannot request 23:00–24:00 directly, even though AC1 allows an end time of 1440 minutes. This is a limitation of the current interface and should be addressed by an explicit end-of-day option. The prototype should not interpret 00:00 as the end of the same day without a clear rule.
 
 ### 9.3 Which "now"?
 
 AC1 says "after the supplied current time". What did **v1** use as the current time, and what did
 that mean for testing case T6?
 
--
+-In v1, the current time was shown in the Current time input and could be changed manually. The page initially displayed a clock time, but the availability decision used the supplied input value. For T6, the current time must be set to 09:00 and the booking start must also be 09:00. The expected result is Unavailable because AC1 requires the start time to be strictly after the current time.
 
 ---
 
@@ -222,3 +258,8 @@ that mean for testing case T6?
      booking data." -->
 
 <!-- Write your conclusion below this line -->
+The Smart Campus prototype demonstrated that AI can quickly generate a functional and responsive web page. The initial version already handled several validation rules correctly, including rejecting booking requests that started before the supplied current time. However, the review identified areas that required improvement.
+
+One issue concerned the room selector. Bolt replaced multiple room cards with a dropdown, which simplified the interface but did not fully remove the possibility of selecting different rooms. Another improvement involved clearing an outdated availability result after the user changed an input. This change was important for understandable feedback under AC6.
+
+The main lesson is that a visually complete prototype is not necessarily a fully verified application. Each acceptance criterion must be checked with specific inputs and observable results. Testing the required scenarios, reviewing generated code, and documenting the limitations are necessary before accepting AI-generated software.
