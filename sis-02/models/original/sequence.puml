@@ -1,0 +1,70 @@
+
+@startuml
+title Course Registration - Sequence Diagram
+
+actor Student
+boundary "Course Registration UI" as UI
+control "Registration Service" as Service
+database "Database" as DB
+
+== Browse Catalog (US-01) ==
+
+Student -> UI: Open catalog for semester
+UI -> Service: getOfferings(semesterId)
+Service -> DB: Get offerings and enrollment counts
+DB --> Service: Course codes, titles, offerings, counts
+Service --> UI: Offerings with available places
+UI --> Student: Display catalog (AC-01)
+
+== Register for Offering (US-02 / US-03) ==
+
+Student -> UI: Request registration(offeringId)
+UI -> Service: register(studentId, offeringId)
+
+note over Service, DB
+Atomic transaction:
+Recheck capacity and duplicates.
+Create Enrollment and update count
+only if both checks pass.
+end note
+
+Service -> DB: Begin atomic registration
+activate DB
+
+DB -> DB: Check current availability (AC-02)
+DB -> DB: Check existing Enrollment
+
+alt Already enrolled (AC-06)
+    DB --> Service: "already enrolled"
+    note right of DB
+    No new Enrollment
+    Count unchanged
+    end note
+
+else Course full (AC-05)
+    DB --> Service: "course full"
+    note right of DB
+    No new Enrollment
+    Count unchanged
+    end note
+
+else Eligible for registration (AC-03)
+    DB -> DB: Create exactly one Enrollment
+    DB -> DB: Update enrollment count
+
+    alt Last available place (AC-04)
+        note right of DB
+        Available places = 0
+        Capacity not exceeded
+        end note
+    end
+
+    DB --> Service: Registration confirmed
+end
+
+deactivate DB
+
+Service --> UI: Registration result
+UI --> Student: Show confirmation or rejection
+
+@enduml
