@@ -28,14 +28,20 @@ Fill the first three columns now; fill the last one after Task 3.
 
 | # | What I expect to go wrong | AC it concerns | Was I right? (after Task 3) |
 | --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
+| 1 | The initial overlap condition may reject a booking whose start is exactly the prior booking's end. | AC4 | Yes in the local v1: T1, T8 and T9 returned Unavailable. |
+| 2 | A reversed interval might be rejected without explaining *why*. | AC1, AC6 | Yes in the local v1: T7 returned Unavailable but only said "This time slot is unavailable." |
 
 **The initial prompt exactly as I sent it** — the deck's prompt with AC1–AC6 pasted in place of
 `[paste AC1–AC6]`, nothing else changed:
 
 ```text
-(paste here)
+Build a small responsive Smart Campus Room Availability Checker. Requirements: Requirements: AC1: Accept a candidate interval only when 0 ≤ start < end ≤ 1440 and start is after the supplied current time.
+AC2: Reject a booking longer than 120 minutes.
+AC3: Reject the request when the selected room is blocked.
+AC4: Reject any interval that overlaps an existing booking; touching endpoints are allowed.
+AC5: Show a clear Available / Unavailable decision without changing the existing booking data.
+AC6: The page remains usable at desktop and narrow/mobile width and gives understandable validation feedback.
+Use fictional sample data only. Keep the implementation simple and within one-page scope. Do not add authentication, backend services, analytics, or unrelated features. After building, briefly list the main files/components you created.. Use fictional sample data only. Keep the implementation simple and within one-page scope. Do not add authentication, backend services, analytics, or unrelated features. After building, briefly list the main files/components you created.
 ```
 
 ---
@@ -43,17 +49,43 @@ Fill the first three columns now; fill the last one after Task 3.
 ## 3. Task 2 — prototype v1
 
 v1 export saved in `original/` and screenshot saved as `evidence/v1.png` **before** any cleanup
-prompt: yes / no
+prompt: yes 
 
 **Bolt's list of the files/components it created, pasted unedited:**
 
 ```text
-(paste here)
+
+- src/lib/checkAvailability.ts — pure rule engine implementing AC1–AC5.
+- src/App.tsx — page wiring: room selection, form state, runs the check, renders results.
+- src/lib/time.ts — HH:MM ↔ minutes-from-midnight helpers.
+- src/components/RoomSelector.tsx — selectable room list with status tags.
+- src/components/BookingForm.tsx — current/start/end time inputs and buttons.
+- src/components/RoomTimeline.tsx — visual schedule with existing bookings + candidate interval.
+- src/components/DecisionPanel.tsx — Available / Unavailable / invalid result panel.
+- src/data/rooms.ts — fictional sample rooms with bookings and blocked flags.
+- src/types.ts — shared types.
+
 ```
 
 **What v1 does — one line per thing that works, or visibly does not:**
 
--
+- The page displays a Smart Campus Room Availability Checker.
+
+- Users can select different rooms from the list.
+
+- The page provides current time, start time, and end time inputs.
+
+- The selected room shows its name, location, capacity, and blocked status.
+
+- The page displays a daily schedule with existing bookings.
+
+- The Check availability and Reset buttons are present.
+
+- The page includes information about the maximum booking duration and touching endpoints.
+
+- The initial version includes multiple selectable rooms, although the required scope is one selected room.
+
+- The availability decisions and validation messages still need to be tested against AC1–AC6.
 
 **Repair prompt** (only if the first build did not run — the deck allows one, then the result is
 v1). Leave empty if you did not need it:
