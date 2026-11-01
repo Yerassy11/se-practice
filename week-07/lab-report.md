@@ -81,17 +81,424 @@ five columns.
 `Vitest`, followed by the case table from section 3:
 
 ```text
-(paste here)
+Generate tests for the existing booking function using Vitest. Use AC1–AC6 and the reviewed case table below.
+
+Import the real function used by the page. Keep its code unchanged. Use fixed time and fresh fixtures. Assert exact decisions and unchanged booking data.
+
+Return the test file, run command, and AC mapping. Flag unclear requirements. We will run the tests ourselves.| ID | Candidate / changed input | Expected | AC | Reason (in your words) |
+| --- | --- | --- | --- | --- |
+| T01 | 660–720 (touching after) | true | AC4 | The previous booking ends at 660, which is excluded from that interval; touching at 660 is allowed. |
+| T02 | 540–570 (starts now) | false | AC1 | The request starts at minute 540, exactly equal to now, while AC1 requires a strictly later start. |
+| T03 | 720–720 (zero duration) | false | AC1 | A candidate with equal start and end has no duration and violates start < end. |
+| T04 | 750–720 (reversed) | false | AC1 | The proposed start 750 is later than end 720, so the interval is reversed. |
+| T05 | 1380–1441 (past day end) | false | AC1 | Minute 1441 falls after the permitted end-of-day limit of 1440. |
+| T06 | 720–840 (120 minutes) | true | AC2 | The candidate lasts exactly 120 minutes, which AC2 expressly allows. |
+| T07 | 720–841 (121 minutes) | false | AC2 | The candidate lasts 121 minutes, one minute over the allowed maximum. |
+| T08 | 570–600 (touching before) | true | AC4 | This request ends exactly where the existing booking begins, so it does not overlap. |
+| T09 | 630–690 (partial overlap) | false | AC4 | The request starts inside the existing 600–660 interval and continues past its end. |
+| T10 | 570–690 (contains booking) | false | AC4 | The request covers the entire existing 600–660 booking; an overlap is unavoidable. |
+| T11 | 615–645 (inside booking) | false | AC4 | The request is entirely within the existing booking and shares actual occupied minutes. |
+| T12 | 600–660 (identical interval) | false | AC4 | The requested interval equals an existing interval, producing complete overlap. |
+| T13 | 660–720, blocked = true | false | AC3 | The room is blocked; AC3 denies an otherwise valid touching request. |
+| T14 | 630–690, bookings = [] | true | AC4 | There are no existing bookings, so no interval can overlap the proposed request. |
+| AC5 | an Available request — the bookings after the call equal the bookings before | true, data unchanged | AC5 | For a valid available request the function must return true and preserve the original bookings array without any mutation. |
+| X1 | 1380–1440 (ends at midnight, 60 min) | true | AC1 | End equals the permitted boundary of 1440, and duration is within the limit. |
+| X2 | 660–720, bookings = [{start:600,end:660},{start:720,end:780}] | true | AC4 | The new interval touches the earlier booking at its end and the later booking at its start; neither is overlap. |  booking.ts:"export type Booking = { start: number; end: number };
+
+type BookingInput = {
+  start: number;
+  end: number;
+  now: number;
+  blocked: boolean;
+  bookings: readonly Booking[];
+};
+
+type BookingIssue =
+  | { kind: "interval" | "past" | "duration" | "blocked" }
+  | { kind: "overlap"; conflict: Booking };
+
+// Shared by the boolean API and the UI's detailed error messages.
+// These checks retain the Week 06 order and conditions.
+export function getBookingIssue({
+  start, end, now, blocked, bookings,
+}: BookingInput): BookingIssue | null {
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    !(start >= 0 && end <= 1440 && start < end)
+  ) {
+    return { kind: "interval" };
+  }
+  if (start <= now) return { kind: "past" };
+  if (end - start > 120) return { kind: "duration" };
+  if (blocked) return { kind: "blocked" };
+
+  const conflict = bookings.find((b) => start < b.end && end > b.start);
+  if (conflict) return { kind: "overlap", conflict };
+  return null;
+}
+
+export function canBook({
+  start, end, now, blocked, bookings,
+}: BookingInput): boolean {
+  return getBookingIssue({ start, end, now, blocked, bookings }) === null;
+}
+"
 ```
 
 **The assistant's answer: run command, AC mapping and any unclear requirements it flagged,
 pasted unedited.** Its test file goes to `suites/first/` and is not pasted here:
 
 ```text
-(paste here)
+Below is a Vitest unit-test file that keeps `booking.ts` unchanged and tests the exported `canBook` function directly.
+
+Assuming the test file is placed next to `booking.ts`, for example:
+
+```text
+src/
+├── booking.ts
+└── booking.test.ts
 ```
 
-The first suite was saved to `suites/first/` **before** I changed anything in it: yes / no
+### `booking.test.ts`
+
+```ts
+import { describe, expect, it } from "vitest";
+import { canBook, type Booking } from "./booking";
+
+const NOW = 540;
+
+/**
+ * Creates a fresh bookings fixture for every test.
+ * The default existing booking is 600–660.
+ */
+function makeBookings(): Booking[] {
+  return [{ start: 600, end: 660 }];
+}
+
+describe("canBook — AC1: valid interval and future start", () => {
+  it("T02: rejects a request that starts exactly now", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 540,
+        end: 570,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T03: rejects zero-duration interval", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 720,
+        end: 720,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T04: rejects reversed interval", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 750,
+        end: 720,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T05: rejects an end time after minute 1440", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 1380,
+        end: 1441,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("X1: accepts an interval ending exactly at minute 1440", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 1380,
+        end: 1440,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("canBook — AC2: maximum duration is 120 minutes", () => {
+  it("T06: accepts exactly 120 minutes", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 720,
+        end: 840,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+
+  it("T07: rejects 121 minutes", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 720,
+        end: 841,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canBook — AC3: blocked rooms", () => {
+  it("T13: rejects an otherwise available request when room is blocked", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 660,
+        end: 720,
+        now: NOW,
+        blocked: true,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("canBook — AC4: overlap detection", () => {
+  it("T01: accepts touching after an existing booking", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 660,
+        end: 720,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+
+  it("T08: accepts touching before an existing booking", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 570,
+        end: 600,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+
+  it("T09: rejects partial overlap", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 630,
+        end: 690,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T10: rejects a request containing an existing booking", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 570,
+        end: 690,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T11: rejects a request fully inside an existing booking", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 615,
+        end: 645,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T12: rejects an interval identical to an existing booking", () => {
+    const bookings = makeBookings();
+
+    expect(
+      canBook({
+        start: 600,
+        end: 660,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(false);
+  });
+
+  it("T14: accepts the request when there are no existing bookings", () => {
+    const bookings: Booking[] = [];
+
+    expect(
+      canBook({
+        start: 630,
+        end: 690,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+
+  it("X2: accepts an interval touching two bookings at both endpoints", () => {
+    const bookings: Booking[] = [
+      { start: 600, end: 660 },
+      { start: 720, end: 780 },
+    ];
+
+    expect(
+      canBook({
+        start: 660,
+        end: 720,
+        now: NOW,
+        blocked: false,
+        bookings,
+      }),
+    ).toBe(true);
+  });
+});
+
+describe("canBook — AC5: Boolean result and no input mutation", () => {
+  it("returns true and leaves booking data unchanged for an available request", () => {
+    const bookings: Booking[] = [
+      { start: 600, end: 660 },
+      { start: 800, end: 850 },
+    ];
+
+    const before = structuredClone(bookings);
+
+    const result = canBook({
+      start: 660,
+      end: 720,
+      now: NOW,
+      blocked: false,
+      bookings,
+    });
+
+    expect(result).toBe(true);
+    expect(typeof result).toBe("boolean");
+    expect(bookings).toEqual(before);
+  });
+
+  it("leaves booking data unchanged when the request is rejected", () => {
+    const bookings: Booking[] = [
+      { start: 600, end: 660 },
+      { start: 800, end: 850 },
+    ];
+
+    const before = structuredClone(bookings);
+
+    const result = canBook({
+      start: 630,
+      end: 690,
+      now: NOW,
+      blocked: false,
+      bookings,
+    });
+
+    expect(result).toBe(false);
+    expect(typeof result).toBe("boolean");
+    expect(bookings).toEqual(before);
+  });
+});
+```
+
+Run it with:
+
+```bash
+npx vitest run
+```
+
+Or only this file:
+
+```bash
+npx vitest run src/booking.test.ts
+```
+
+If Vitest is not installed yet:
+
+```bash
+npm install -D vitest
+```
+
+### AC mapping
+
+| AC | Tests | What is verified |
+|---|---|---|
+| **AC1** | T02, T03, T04, T05, X1 | `start > now`, `start < end`, day boundary `end <= 1440` |
+| **AC2** | T06, T07 | 120 minutes accepted; 121 rejected |
+| **AC3** | T13 | Blocked room is rejected |
+| **AC4** | T01, T08–T12, T14, X2 | Overlap logic and allowed endpoint touching |
+| **AC5** | AC5 tests | Boolean result and bookings remain unchanged |
+| **AC6** | Not covered by this unit file | UI validation feedback and mobile layout |
+
+There is one important unclear point: **AC6 cannot be properly tested through `canBook()`**. `canBook()` only returns a Boolean. AC6 concerns the separate page's validation feedback and responsive/mobile layout, so it requires a component/browser test against the actual Bolt page rather than a unit test of `booking.ts`.
+
+Also, your implementation checks `Number.isFinite(start)` and `Number.isFinite(end)`, but the stated AC1 says **integer minutes**. It does **not** currently reject fractional values such as `660.5`. If “integer minutes” is a fixed requirement, that is a requirement/implementation mismatch worth flagging rather than silently changing the existing function.
+
+Finally, if `booking.test.ts` is not next to `booking.ts`, change only this import:
+
+```ts
+import { canBook, type Booking } from "./booking";
+```
+
+to the actual path used by your project. The production `booking.ts` itself does not need to be modified.
+```
+
+The first suite was saved to `suites/first/` **before** I changed anything in it: yes 
 
 ---
 
