@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import type { CheckResult, Room } from "./types";
 import { SAMPLE_ROOMS } from "./data/rooms";
 import { checkAvailability } from "./lib/checkAvailability";
+import { canBook } from "./booking";
 import { fmtTime, nowHHMM, parseTime } from "./lib/time";
 import { RoomSelector } from "./components/RoomSelector";
 import { BookingForm } from "./components/BookingForm";
@@ -35,13 +36,26 @@ function App() {
     const current = parseTime(currentTime);
     const start = parseTime(startTime);
     const end = parseTime(endTime);
+    const isAvailable = canBook({
+      start,
+      end,
+      now: current,
+      blocked: room.blocked,
+      bookings: room.bookings,
+    });
     const res = checkAvailability({
       room,
       currentTimeMin: current,
       startMin: start,
       endMin: end,
     });
-    setResult(res);
+    // canBook controls availability; retain the detailed validation feedback.
+    setResult({
+      ...res,
+      decision: isAvailable
+        ? "available"
+        : res.decision === "invalid" ? "invalid" : "unavailable",
+    });
     setSubmitted(true);
   };
 

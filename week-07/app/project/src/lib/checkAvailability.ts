@@ -1,4 +1,5 @@
 import type { CheckInput, CheckResult } from "../types";
+import { getBookingIssue } from "../booking";
 import { fmtTime } from "./time";
 
 /**
@@ -7,20 +8,23 @@ import { fmtTime } from "./time";
  */
 export function checkAvailability(input: CheckInput): CheckResult {
   const { room, currentTimeMin, startMin, endMin } = input;
+  const issue = getBookingIssue({
+    start: startMin,
+    end: endMin,
+    now: currentTimeMin,
+    blocked: room.blocked,
+    bookings: room.bookings,
+  });
 
-  // AC1: 0 ≤ start < end ≤ 1440, and start must be after current time.
-  if (
-    !Number.isFinite(startMin) ||
-    !Number.isFinite(endMin) ||
-    !(startMin >= 0 && endMin <= 1440 && startMin < endMin)
-  ) {
+  // Keep the original UI messages; booking.ts owns the decision rules.
+  if (issue?.kind === "interval") {
     return {
       decision: "invalid",
       reason:
         "Enter a valid interval: 0 ≤ start < end ≤ 1440 minutes (00:00–24:00).",
     };
   }
-  if (startMin <= currentTimeMin) {
+  if (issue?.kind === "past") {
     return {
       decision: "invalid",
       reason: `Start time must be after the current time (${fmtTime(currentTimeMin)}).`,
@@ -28,7 +32,7 @@ export function checkAvailability(input: CheckInput): CheckResult {
   }
 
   // AC2: reject bookings longer than 120 minutes.
-  if (endMin - startMin > 120) {
+  if (issue?.kind === "duration") {
     return {
       decision: "unavailable",
       reason: `Requested length is ${endMin - startMin} min, but the maximum is 120 min.`,
@@ -36,19 +40,15 @@ export function checkAvailability(input: CheckInput): CheckResult {
   }
 
   // AC3: reject when the room is blocked.
-  if (room.blocked) {
+  if (issue?.kind === "blocked") {
     return {
       decision: "unavailable",
       reason: "This room is blocked and cannot be booked.",
     };
   }
 
-  // AC4: reject overlap with existing bookings; touching endpoints allowed.
-  // Intervals [a,b) and [c,d) overlap iff a < d && c < b.
-  const conflict = room.bookings.find(
-    (b) => startMin < b.end && endMin > b.start
-  );
-  if (conflict) {
+  if (issue?.kind === "overlap") {
+    const { conflict } = issue;
     return {
       decision: "unavailable",
       reason: `Overlaps an existing booking (${fmtTime(conflict.start)}–${fmtTime(conflict.end)}). Touching endpoints are allowed.`,

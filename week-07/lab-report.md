@@ -1,8 +1,9 @@
 # Week 07 — Lab report
 
-**Name:**
-**Group:**
-**Date:**
+**Name:** Khudaibergen Yerassyl
+**Group:** Monday 16L00-19:00
+**Date:** 2026-11-01
+
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
 grader find your answers by them. You can add rows to any table, but never remove its header.
@@ -13,7 +14,7 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| Project I continue (`week-06` = my Week 06 Bolt project, `starter` = the provided starter) | |
+| Project I continue (`week-06` = my Week 06 Bolt project, `starter` = the provided starter) | week-06 |
 | Bolt project link (or `not shared`, and why) | |
 | Assistant that generated the tests (tool) | |
 | Exact model (with its version, or `not displayed`) | |
@@ -29,15 +30,17 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| File and function (or "inside the page component") | |
-| Its inputs | |
-| What it returned | |
-| How the page used it | |
+| File and function (or "inside the page component") | `checkAvailability(input: CheckInput): CheckResult` in `week-07/app/project/src/lib/checkAvailability.ts`. Week 06 already had this separate function in `week-06/prototype/project/src/lib/checkAvailability.ts` , it was copied unchanged, not extracted from the page component in Week 07. |
+| Its inputs | One `CheckInput` object: `room: Room` (the decision uses `room.blocked` and `room.bookings`, with each booking's `start` and `end`), `currentTimeMin`, `startMin`, and `endMin`. All three time values are numbers in minutes from midnight. |
+| What it returned | A `CheckResult` object with `decision` (`"available"`, `"unavailable"`, or `"invalid"`), a `reason` string, and an optional `conflict: Booking` when an existing booking overlaps. Invalid interval bounds/order, non-finite start/end, or a start at/before the current time produce `"invalid"`. Duration over 120 minutes, a blocked room, or overlap (`startMin < b.end && endMin > b.start`) produce `"unavailable"`; otherwise it returns `"available"`. Touching endpoints are allowed. The function does not modify bookings. |
+| How the page used it | In `week-07/app/project/src/App.tsx`, `BookingForm` receives `onSubmit={handleSubmit}`. Submitting via "Check availability" calls `handleSubmit`, which converts the three time strings using `parseTime`, calls `checkAvailability({ room, currentTimeMin: current, startMin: start, endMin: end })`, then calls `setResult(res)` and `setSubmitted(true)`. `DecisionPanel` receives `result` and `submitted` and maps the decision to "Available", "Unavailable", or "Check your input", displaying the reason. This calling code also already existed in Week 06. |
 
 **What I changed to extract `canBook`.** Say which file it now lives in, what you moved, and why
 the behaviour did not change. Also say which file of the page now calls it. 40 words or more.
 
 <!-- Write below this line -->
+
+I added `week-07/app/project/src/booking.ts` beside `App.tsx`. Week 06 already had a separate `checkAvailability` function; I moved its existing decision rules into the shared `getBookingIssue` helper and exposed `canBook` as a boolean wrapper. I preserved the finite-number checks, validation order, 120-minute limit, blocked-room rejection, and strict overlap comparisons. The old `Room` input is adapted to `blocked` and `bookings`; `currentTimeMin`, `startMin`, and `endMin` become `now`, `start`, and `end`. Existing bookings already use numeric minutes and may retain their optional labels; the new `Booking` type only requires `start` and `end`, and the input array is readonly. No additional conversion or data mutation is needed. `App.tsx` still parses the form's time strings with `parseTime`, then calls `canBook` directly from `handleSubmit`. Its boolean controls the final availability decision, while the diagnostic adapter preserves the reason and distinguishes invalid input from an unavailable room. `checkAvailability` now uses the shared rules to preserve the original invalid/unavailable messages and conflict details. The form, result panel, and reset logic remain in place.
 
 ---
 
