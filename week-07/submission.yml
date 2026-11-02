@@ -13,17 +13,17 @@ schema: 1
 week: "07"
 
 student:
-  name:
-  student_id:          # as in KBTU records, e.g. 00X000000
-  github:              # your GitHub username, the one that owns the repo
+  name: Khudaibergen Yerassyl
+  student_id:      24B032101     # as in KBTU records, e.g. 00X000000
+  github:           Yerassy11   # your GitHub username, the one that owns the repo
 
 assistant:
-  tool:                # the assistant that generated the tests: Bolt.new, ChatGPT, Claude, Copilot, ...
-  model:               # the exact model with its version, or: not displayed
+  tool:              ChatGPT  # the assistant that generated the tests: Bolt.new, ChatGPT, Claude, Copilot, ...
+  model:               GPT 5.6 Sol # the exact model with its version, or: not displayed
 
 project:
-  baseline:            # week-06 (your Week 06 Bolt project) | starter (the provided starter/)
-  bolt_url:            # the share link of your Bolt project, or: not-shared
+  baseline:            week-06 # week-06 (your Week 06 Bolt project) | starter (the provided starter/)
+  bolt_url:            https://bolt.new/p/72144600  # the share link of your Bolt project, or: not-shared
   vitest: 3.2.4        # from the actual Vitest runs
 
 counts:
@@ -56,12 +56,12 @@ review_findings:
   # an AC, a mutant (M1-M3), or a file.
   # Worthless:        "The AI tests were mostly fine"
   # Worth everything: "T06: the first suite expected 720-840 to be rejected, but AC2 allows exactly 120 minutes"
-  -
-  -
-  -
+  - "AC1: the first suite lacked a negative-start case; the final suite adds start=-1 with now=-10 to check the lower bound independently."
+  - "T06: expecting true for 720-840 is correct because AC2 allows exactly 120 minutes; this assertion detects M1."
+  - "AC5: the available-request test compares bookings with a structuredClone taken before the call, checking that booking data remains unchanged."
 
 honesty:
-  first_suite_unedited:     # yes | no   suites/first/ holds the assistant's first test file as generated
-  outputs_unedited:         # yes | no   every run in lab-report.md is pasted from a real terminal, unedited
-  mutants_restored:         # yes | no   the three defects were reverted before the final run
-  ai_usage_disclosed:       # yes | no   AI_USAGE.md is complete
+  first_suite_unedited:   yes  # yes | no   suites/first/ holds the assistant's first test file as generated
+  outputs_unedited:        yes # yes | no   every run in lab-report.md is pasted from a real terminal, unedited
+  mutants_restored:       yes   # yes | no   the three defects were reverted before the final run
+  ai_usage_disclosed:     yes  # yes | no   AI_USAGE.md is complete
