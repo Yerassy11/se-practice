@@ -726,7 +726,32 @@ change and after restoring the correct code from section 7. Every test must pass
 is still open, leave its test failing and explain it in 9.1.
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ ✓ src/suites/first/booking.test.ts (18 tests) 5ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 1ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 1ms
+   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 0ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  11:39:29
+   Duration  1.03s (transform 128ms, setup 0ms, collect 145ms, tests 5ms, environment 0ms, prepare 397ms)
 ```
 
 ---
@@ -739,18 +764,214 @@ error does not count as detection.
 
 | Trial | Intentional change | Detected / Survived | Failing test ID(s) | If it survived: why, and what you added |
 | --- | --- | --- | --- | --- |
-| M1 | Reject duration >= 120 instead of > 120 | Detected / Survived | | |
-| M2 | Treat touching endpoints as an overlap | Detected / Survived | | |
-| M3 | Remove the blocked-room rejection | Detected / Survived | | |
+| M1 | Reject duration >= 120 instead of > 120 | Detected | T06: accepts exactly 120 minutes | N/A: detected by the existing test; tests unchanged. |
+| M2 | Treat touching endpoints as an overlap | Detected | T01, T08, X2; AC5: returns true and leaves booking data unchanged for an available request | N/A: detected by existing assertions; tests unchanged. |
+| M3 | Remove the blocked-room rejection | Detected | T13: rejects an otherwise available request when room is blocked | N/A: detected by the existing assertion; tests unchanged. |
 
 **The run of each mutant, pasted unedited.** Paste the `Tests` summary line and the failing test
 names at least:
 
+M1 — `npx vitest run` from `week-07/app`. The baseline passed all 18 tests and matched commit `c2ec4e8`. Changed only `>` to `>=` in the duration check in `project/src/booking.ts`, then restored the original file after the run. Actual failure and summary excerpts:
+
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/suites/first/booking.test.ts:98:7
+     96|         bookings,
+     97|       }),
+     98|     ).toBe(true);
+       |       ^
+     99|   });
+    100| 
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  11:36:08
+   Duration  951ms (transform 101ms, setup 0ms, collect 119ms, tests 14ms, environment 0ms, prepare 358ms)
 ```
 
-All three changes reverted, and the full suite run again (section 6.3): yes / no
+M2 — `npx vitest run` from `week-07/app`. Changed only the overlap comparisons to `start <= b.end && end >= b.start` in `project/src/booking.ts`. Detected by assertion failures in T01, T08, X2, and the AC5 available-request test. Restored the original file after the run; tests unchanged.
+
+```text
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ ❯ src/suites/first/booking.test.ts (18 tests | 4 failed) 14ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 1ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   × canBook — AC4: overlap detection > T01: accepts touching after an existing booking 7ms
+     → expected false to be true // Object.is equality
+   × canBook — AC4: overlap detection > T08: accepts touching before an existing booking 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   × canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 1ms
+     → expected false to be true // Object.is equality
+   × canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC4: overlap detection > T01: accepts touching after an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/suites/first/booking.test.ts:144:7
+    142|         bookings,
+    143|       }),
+    144|     ).toBe(true);
+       |       ^
+    145|   });
+    146| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC4: overlap detection > T08: accepts touching before an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/suites/first/booking.test.ts:158:7
+    156|         bookings,
+    157|       }),
+    158|     ).toBe(true);
+       |       ^
+    159|   });
+    160| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/suites/first/booking.test.ts:245:7
+    243|         bookings,
+    244|       }),
+    245|     ).toBe(true);
+       |       ^
+    246|   });
+    247| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/suites/first/booking.test.ts:266:20
+    264|     });
+    265| 
+    266|     expect(result).toBe(true);
+       |                    ^
+    267|     expect(typeof result).toBe("boolean");
+    268|     expect(bookings).toEqual(before);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 14 passed (18)
+   Start at  11:38:00
+   Duration  992ms (transform 105ms, setup 0ms, collect 119ms, tests 14ms, environment 0ms, prepare 383ms)
+
+```
+
+M3 — `npx vitest run` from `week-07/app`. Commented out only `if (blocked) return { kind: "blocked" };` in `project/src/booking.ts`. Detected by the assertion failure in T13. Restored the original file after the run; tests unchanged.
+
+```text
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ ❯ src/suites/first/booking.test.ts (18 tests | 1 failed) 13ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 1ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   × canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 8ms
+     → expected true to be false // Object.is equality
+   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/suites/first/booking.test.ts > canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/suites/first/booking.test.ts:128:7
+    126|         bookings,
+    127|       }),
+    128|     ).toBe(false);
+       |       ^
+    129|   });
+    130| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 passed (18)
+   Start at  11:38:12
+   Duration  984ms (transform 110ms, setup 0ms, collect 117ms, tests 13ms, environment 0ms, prepare 386ms)
+
+```
+
+All three changes reverted, and the full suite run again (section 6.3): no — all three changes are reverted; the final full-suite run after M2 and M3 is pending and will be performed by the student.
 
 ---
 
@@ -762,7 +983,7 @@ screenshot of each as `evidence/ui-1.png` … `evidence/ui-5.png`. Take **ui-4 a
 
 | # | Action | Expected observation | AC | What I observed | Pass / Fail / Not testable |
 | --- | --- | --- | --- | --- | --- |
-| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | | Pass / Fail / Not testable |
+| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | | Pass |
 | U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | | Pass / Fail / Not testable |
 | U3 | Clear a required input and submit | Understandable validation feedback | AC6 | | Pass / Fail / Not testable |
 | U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | | Pass / Fail / Not testable |
