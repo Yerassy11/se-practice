@@ -24,32 +24,32 @@ assistant:
 project:
   baseline:            # week-06 (your Week 06 Bolt project) | starter (the provided starter/)
   bolt_url:            # the share link of your Bolt project, or: not-shared
-  vitest:              # the Vitest version from the "RUN  v..." line, e.g. 3.2.4
+  vitest: 3.2.4        # from the actual Vitest runs
 
 counts:
-  tests_first:         # tests in the assistant's first suite (suites/first/)
-  tests_final:         # tests in your final suite (app/.../booking.test.*)
-  first_run_failed:    # failed tests in your first run (lab-report.md 6.1)
-  review_decisions:    # rows in lab-report.md section 5
-  mutants_detected:    # how many of M1-M3 your final suite detected (0-3)
+  tests_first: 18
+  tests_final: 21
+  first_run_failed: 0
+  review_decisions: 7
+  mutants_detected: 3  # original trials; the detecting assertions are retained in the final suite
 
 checker:
   # Numbers from YOUR last run of: python tests/check_suite.py
   # They must add up to the number of checks it runs (33).
   # Report them as they came out.
   # A FAIL you report and explain in lab-report.md costs you nothing. A hidden one costs the criterion.
-  pass:
-  fail:
-  error:
-  commit:              # the commit you ran the checker at: git rev-parse --short HEAD
+  pass: 33
+  fail: 0
+  error: 0
+  commit: 4dbc2db       # the commit you ran the checker at: git rev-parse --short HEAD
                        # (normally the commit just before you commit this file — that is fine)
-  known_fails: []      # every check ID that is still FAIL or ERROR, explained in lab-report.md §9.1, e.g. [U2]
+  known_fails: []      # no remaining checker FAIL or ERROR
 
 assumptions:
   # No AC says what canBook does when an EXISTING booking is reversed: {start: 700, end: 650}.
   # Call your function with that booking and a 660-720 request, write down what it returns,
   # and defend it in lab-report.md §9.3. Any answer is acceptable. Not checking is not.
-  invalid_existing_booking:   # returns-true | returns-false | throws
+  invalid_existing_booking: returns-true
 
 review_findings:
   # Three or more. One line each, and each one names what it is about: a case (T01-T14, X1, X2),

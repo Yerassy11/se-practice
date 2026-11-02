@@ -15,12 +15,12 @@ grader find your answers by them. You can add rows to any table, but never remov
 | | |
 | --- | --- |
 | Project I continue (`week-06` = my Week 06 Bolt project, `starter` = the provided starter) | week-06 |
-| Bolt project link (or `not shared`, and why) | |
-| Assistant that generated the tests (tool) | |
-| Exact model (with its version, or `not displayed`) | |
-| Where I ran the tests (Bolt terminal / my computer / Codespace) | |
-| Vitest version (the `RUN  v…` line of a run) | |
-| Test command | |
+| Bolt project link (or `not shared`, and why) | not shared — no share URL was recorded for this local export. |
+| Assistant that generated the tests (tool) | ChatGPT, as declared in `AI_USAGE.md`; Codex performed the documented review and checker fixes. |
+| Exact model (with its version, or `not displayed`) | GPT 5.6 Sol, as declared in `AI_USAGE.md` for the original generation. |
+| Where I ran the tests (Bolt terminal / my computer / Codespace) | My computer, PowerShell, `C:/Users/Acer/Desktop/SE/week-07/app`. |
+| Vitest version (the `RUN  v…` line of a run) | 3.2.4 |
+| Test command | `npx vitest run --reporter=verbose` |
 
 ---
 
@@ -726,33 +726,39 @@ change and after restoring the correct code from section 7. Every test must pass
 is still open, leave its test failing and explain it in 9.1.
 
 ```text
+
  RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
 
- ✓ src/suites/first/booking.test.ts (18 tests) 5ms
-   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 1ms
-   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
-   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
-   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
-   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
-   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
-   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
-   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
-   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
-   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
-   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
-   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
-   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
-   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
-   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
-   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
-   ✓ canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 1ms
-   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 0ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > AC1: rejects a start before minute zero independently of the current time 4ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > AC1: accepts a request starting one minute after now 1ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > AC1: accepts a one-minute interval 1ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 0ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+ ✓ project/src/booking.test.ts > canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+ ✓ project/src/booking.test.ts > canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 1ms
+ ✓ project/src/booking.test.ts > canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 1ms
+ ✓ project/src/booking.test.ts > canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+ ✓ project/src/booking.test.ts > canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+ ✓ project/src/booking.test.ts > canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request 2ms
+ ✓ project/src/booking.test.ts > canBook — AC5: Boolean result and no input mutation > AC5: leaves booking data unchanged when the request is rejected 1ms
 
  Test Files  1 passed (1)
-      Tests  18 passed (18)
-   Start at  11:39:29
-   Duration  1.03s (transform 128ms, setup 0ms, collect 145ms, tests 5ms, environment 0ms, prepare 397ms)
+      Tests  21 passed (21)
+   Start at  12:00:35
+   Duration  1.26s (transform 119ms, setup 0ms, collect 154ms, tests 17ms, environment 0ms, prepare 441ms)
+
 ```
+
+The final suite is now `app/project/src/booking.test.ts`. The previously executed first suite was moved unchanged to `suites/first/booking.test.ts` as a historical snapshot. The final suite corrects the import for its location, names both AC5 tests explicitly, and adds the three boundary tests proposed in §6.2: a negative start isolated from the time rule, a start one minute after now, and a one-minute interval. Expected results of the original 18 tests are unchanged. Fractional-minute validation remains an open implementation limitation.
 
 ---
 
@@ -971,7 +977,7 @@ AssertionError: expected true to be false // Object.is equality
 
 ```
 
-All three changes reverted, and the full suite run again (section 6.3): no — all three changes are reverted; the final full-suite run after M2 and M3 is pending and will be performed by the student.
+All three changes reverted, and the full suite run again (section 6.3): yes — the final suite passed all 21 tests after restoration. The three mutant outputs above are historical runs of the original 18-test suite, whose assertions are retained in the final suite.
 
 ---
 
@@ -983,11 +989,11 @@ screenshot of each as `evidence/ui-1.png` … `evidence/ui-5.png`. Take **ui-4 a
 
 | # | Action | Expected observation | AC | What I observed | Pass / Fail / Not testable |
 | --- | --- | --- | --- | --- | --- |
-| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | | Pass |
-| U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | | Pass / Fail / Not testable |
-| U3 | Clear a required input and submit | Understandable validation feedback | AC6 | | Pass / Fail / Not testable |
-| U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | | Pass / Fail / Not testable |
-| U5 | Repeat the checks on the same data | Existing bookings remain unchanged | AC5 | | Pass / Fail / Not testable |
+| U1 | Check 11:00–12:00, unblocked | Available, with the fixed sample booking | AC5 | `ui-1.png` shows Available for 10:00–11:00 with existing bookings at 09:00–10:00 and 12:00–14:00. This supports availability for touching endpoints, but does not document the exact requested fixture and interval. | Not testable |
+| U2 | Enable blocked, then check again | Unavailable replaces the earlier result | AC3, AC5 | `ui-2.png` shows Thermodynamics Lab marked Blocked and an Unavailable message explaining the room cannot be booked. It is a different room from ui-1, so the screenshot does not establish the same-room toggle and replacement sequence. | Not testable |
+| U3 | Clear a required input and submit | Understandable validation feedback | AC6 | `ui-3.png` shows an empty Start field and the browser validation message “Заполните это поле.” (Fill out this field). | Pass |
+| U4 | Use a narrow (phone) width | Controls and result remain usable | AC6 | `ui-4.png` is a 750×2526 portrait image. Inputs and buttons stack vertically; the room selector, timeline, and result panel fit within the card. The screenshot does not independently establish CSS viewport width. | Pass |
+| U5 | Repeat the checks on the same data | Existing bookings remain unchanged | AC5 | Comparing `ui-1.png` and `ui-5.png`, Engineering Hall A still lists Calculus I at 09:00–10:00 and Physics 201 at 12:00–14:00 after a different request, 11:00–12:00, returns Available. The displayed schedule is unchanged. | Pass |
 
 ---
 
@@ -999,17 +1005,17 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | All 33 checker checks pass after correcting suite locations, report fields, and the export layout. This static result does not close the fractional-minute coverage gap or prove the unverified UI sequences. |
 
 ### 9.2 Original and improved suites
 
 | Measure | First suite | Improved suite |
 | --- | --- | --- |
-| Executed / passed / failed | | |
-| Requirements with meaningful tests (AC IDs and gaps) | | |
-| Selected mutants detected | | |
-| Accepted / revised / rejected tests | | |
-| Remaining limitations | | |
+| Executed / passed / failed | 18 / 18 / 0 — actual first run in §6.1, 11:25:25. | 21 / 21 / 0 — actual final run in §6.3, 12:00:35, from `project/src/booking.test.ts`. |
+| Requirements with meaningful tests (AC IDs and gaps) | AC1–AC5 cover interval validity, duration, blocked rooms, overlap, Boolean results, and unchanged data. Negative starts, immediately-after-now starts, and minimum valid duration lack dedicated tests. | AC1–AC5 retained; three added AC1 boundary tests cover those gaps. Both AC5 tests now name AC5 explicitly. Fractional-minute inputs and automated AC6 coverage remain missing. |
+| Selected mutants detected | Actual §7 trials detected 3/3: M1 by T06; M2 by T01, T08, X2 and the AC5 available-request assertion; M3 by T13. | All detecting assertions retained unchanged. The mutation trials were not rerun against the expanded 21-test file; §7 records the original trials. |
+| Accepted / revised / rejected tests | 18 retained, 0 rejected; seven accepted review decisions in §5. | 18 original cases retained, 3 added, 0 rejected; 2 AC5 titles revised and the import corrected. No original expected decision changed. |
+| Remaining limitations | Fractional-minute and several integer-boundary gaps; no automated UI tests or defined response to invalid existing bookings. | Integer-boundary gaps above addressed; fractional-minute validation remains open. UI screenshots support visible states, but U1/U2 do not establish the exact requested sequences. |
 
 ### 9.3 What no AC decides
 
@@ -1017,7 +1023,14 @@ Call your function with `bookings = [{ start: 700, end: 650 }]` (a reversed exis
 and a request of 660–720. What does it return? Does any AC say what it should return? (This is
 the value you declare in `submission.yml` under `assumptions.invalid_existing_booking`.)
 
--
+Executed a separate Node.js call importing the real `canBook` from `app/project/src/booking.ts`:
+
+```ts
+canBook({ start: 660, end: 720, now: 540, blocked: false,
+          bookings: [{ start: 700, end: 650 }] })
+```
+
+Actual output: `true`; the declaration is `returns-true`. The malformed interval is an existing booking, not the candidate request. The overlap condition `start < b.end && end > b.start` is false because `660 < 650` is false. AC1–AC6 do not specify validation of malformed existing bookings. This behavior therefore assumes existing data is valid; it is observed behavior, not a requirement established by the ACs.
 
 ---
 
@@ -1033,3 +1046,9 @@ the value you declare in `submission.yml` under `assumptions.invalid_existing_bo
      pass, M1 would have become the real behaviour." -->
 
 <!-- Write your conclusion below this line -->
+
+The first AI suite risked creating false confidence: all 18 tests passed, although negative starts, the first minute after now, and minimum valid duration lacked dedicated checks. Review found no incorrect expected decisions. The final suite retains those decisions and adds three boundary tests; its actual run passed all 21 tests.
+
+A green run establishes that the implementation satisfies the assertions executed on those inputs. It does not prove complete AC coverage or correct behavior for every malformed value. The earlier mutation trials detected M1 through T06, M2 through endpoint and AC5 assertions, and M3 through T13. Those assertions remain in the final suite.
+
+The screenshots show availability, a blocked-room rejection, required-field feedback, and vertically arranged mobile controls. However, U1 and U2 do not demonstrate the exact prescribed sequences. Fractional-minute validation still lacks a test. The reversed existing booking returns true, but no AC defines that response; it remains an explicit assumption rather than proven correctness.
