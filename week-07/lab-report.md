@@ -511,8 +511,15 @@ requests* · *mocked booking function*, or your own) and the AC that decides it.
 
 | # | Test or part of the suite | What is weak or wrong | Decision: accept / revise / reject | AC or reason |
 | --- | --- | --- | --- | --- |
-| 1 | | | accept / revise / reject | |
-| 2 | | | accept / revise / reject | |
+| 1 | Import of `canBook` | Checked for a mocked booking function or wrong module. The current import `../../../project/src/booking` resolves to the real application module from `app/src/suites/first/booking.test.ts`; `./booking` would point to a nonexistent sibling. There is no `vi.mock`. | accept | AC1–AC5 must exercise the actual booking rules. |
+| 2 | Boolean assertions in all 18 tests | Checked for "no exception occurred" and "expected = current output" weaknesses. Every test asserts a literal `.toBe(true)` or `.toBe(false)`; expected values are not computed by calling the implementation. | accept | AC1–AC4 define acceptance/rejection; AC5 checks the Boolean result and unchanged data. |
+| 3 | T02–T07, T13 and X1 | Checked for "only valid requests" and missing boundary coverage. Tests reject starts at now, zero/reversed intervals, an end of 1441, a duration of 121, and blocked rooms; they accept exactly 120 minutes and an end of 1440. | accept | AC1: interval and future start; AC2: maximum 120 minutes; AC3: blocked rooms. |
+| 4 | T01, T08–T12, T14 and X2 | Checked for incomplete overlap coverage. Touching before/after is accepted, partial overlap/containment/identical intervals are rejected, an empty schedule is accepted, and X2 checks touching two bookings. These are distinct cases rather than duplicate requests. | accept | AC4 allows touching endpoints and rejects overlapping intervals. |
+| 5 | Time and fixture setup | Checked for time-dependent results and shared mutable fixtures. Every call uses fixed `NOW = 540`; there is no `Date.now()` or `new Date()`. Each test calls `makeBookings()` or creates its own array literal, including fresh booking objects. | accept | AC1 requires a controlled current time; AC4–AC5 require isolated booking data. |
+| 6 | Both AC5 tests | Checked for mutation assertions that only compare an object with itself. Each test saves a `structuredClone(bookings)` before the call and checks equality afterwards, for both an accepted and a rejected request. The extra `typeof` assertion is redundant but harmless. | accept | AC5: checking availability must not change bookings. |
+| 7 | Suite structure and count | Checked for omitted or disabled cases. There are 18 explicit `it` tests: T01–T14, X1, X2, and two AC5 tests. No `.skip`, `.only`, or `test.each` occurs. | accept | AC1–AC5 coverage; the task requires at least 17 tests. |
+
+This is a static review of `app/src/suites/first/booking.test.ts`; the suite was not run during this review. No test changes are required by these checks. AC6 still requires separate browser checks.
 
 ---
 
@@ -525,7 +532,32 @@ The **real** terminal output of the first run of the first suite, pasted unedite
 is not a run.
 
 ```text
-(paste here)
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ ✓ src/suites/first/booking.test.ts (18 tests) 7ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 2ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 1ms
+   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 0ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  11:25:25
+   Duration  1.19s (transform 166ms, setup 0ms, collect 195ms, tests 7ms, environment 0ms, prepare 473ms)
 ```
 
 **Each failure, diagnosed** (the deck's table: import/runner error · assertion mismatch · result
@@ -533,7 +565,7 @@ changing per run · no tests discovered). Write `none` in the first row if nothi
 
 | Failing test | Observed failure | First check | Test repair or implementation fix? | Action taken |
 | --- | --- | --- | --- | --- |
-| | | | | |
+| none | No failures: 18 tests passed in 1 test file. | Checked the Vitest summary: `Test Files 1 passed (1)` and `Tests 18 passed (18)`. | Neither required for this run. | No failure-related changes made; proceed to review coverage and missing boundaries. |
 
 ### 6.2 The improvement prompt
 
@@ -541,7 +573,150 @@ The deck's improvement prompt exactly as sent, followed by the actual output fro
 paste the assistant's answer, unedited:
 
 ```text
-(paste here)
+Review this test suite against AC1–AC6 and our case table. Identify incorrect expectations, weak assertions, duplicated cases, and missing boundaries.
+
+For each proposed change, explain the requirement and the defect it could detect. Improve the tests without changing correct expectations to match buggy behavior.
+
+Use the actual failure output below. Separate test repairs from implementation fixes.     RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-07/app
+
+ ✓ src/suites/first/booking.test.ts (18 tests) 7ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 2ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > returns true and leaves booking data unchanged for an available request 1ms
+   ✓ canBook — AC5: Boolean result and no input mutation > leaves booking data unchanged when the request is rejected 0ms
+
+ Test Files  1 passed (1)
+      Tests  18 passed (18)
+   Start at  11:25:25
+   Duration  1.19s (transform 166ms, setup 0ms, collect 195ms, tests 7ms, environment 0ms, prepare 473ms)  Что в текущих тестах правильно
+Все ожидания из вашей case table сейчас выставлены корректно. Их не нужно менять ради того, чтобы тесты оставались зелёными.
+
+Например:
+660–720 touching after -> true
+570–600 touching before -> true
+720–840 exactly 120 -> true
+720–841 121 minutes -> false
+1380–1440 -> true
+1380–1441 -> false
+
+Это соответствует AC1–AC4.
+
+Overlap condition в production-коде тоже соответствует таблице:
+start < b.end && end > b.start
+
+Именно строгие < / > позволяют touching endpoints.
+1. Test repairs / improvements
+A. Добавить нижнюю границу дня: start < 0
+Requirement: AC1 требует:
+0 <= start < end <= 1440
+
+Сейчас проверяется только верхняя граница через T05/X1. Нижняя 0 вообще не тестируется.
+
+Добавить:
+it("AC1: rejects a start before minute 0", () => {
+  const bookings = makeBookings();
+
+  expect(
+    canBook({
+      start: -1,
+      end: 60,
+      now: -10,
+      blocked: false,
+      bookings,
+    }),
+  ).toBe(false);
+});
+
+Почему now: -10: иначе тест мог бы пройти из-за start <= now, а не из-за границы дня. Нам нужен изолированный тест именно start >= 0.
+
+Какой дефект обнаружит: случайное удаление или изменение:
+start >= 0
+
+B. Добавить минимально допустимый момент после now
+Сейчас есть:
+T02 start = now -> false
+
+Но нет второй стороны boundary:
+start = now + 1 -> true
+
+Добавить:
+it("AC1: accepts a request starting one minute after now", () => {
+  const bookings: Booking[] = [];
+
+  expect(
+    canBook({
+      start: 541,
+      end: 542,
+      now: NOW,
+      blocked: false,
+      bookings,
+    }),
+  ).toBe(true);
+});
+
+Requirement:
+start > now
+
+Boundary testing должно проверять обе стороны:
+540 -> false
+541 -> true
+
+Какой дефект обнаружит: неправильное условие вроде:
+start <= now + 1
+
+или другое off-by-one поведение.
+C. Добавить минимальную допустимую длительность
+T03 проверяет:
+720–720 -> false
+
+Но нет соседнего валидного значения:
+720–721 -> true
+
+Добавить:
+it("AC1: accepts a one-minute interval", () => {
+  const bookings: Booking[] = [];
+
+  expect(
+    canBook({
+      start: 720,
+      end: 721,
+      now: NOW,
+      blocked: false,
+      bookings,
+    }),
+  ).toBe(true);
+});
+
+Какой дефект обнаружит: ошибочную минимальную длительность либо неправильное start < end.
+D. Обязательно протестировать integer requirement
+Это самый важный отсутствующий тест.
+
+AC1 говорит:
+integer minutes
+
+Но текущий код проверяет только:
+Number.isFinite(start)
+Number.isFinite(end)
+
+Поэтому:
+start: 660.5
+end: 720
+
+сейчас может быть принят.
 ```
 
 ### 6.3 The final run
