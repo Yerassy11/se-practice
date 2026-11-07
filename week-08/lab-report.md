@@ -51,8 +51,122 @@ You copied the whole `canBook` function from `buggy/booking.ts` (or `.js`) over 
 nothing else. This is the real output:
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ❯ project/src/booking.test.ts (21 tests | 4 failed) 16ms
+   ✓ canBook — AC1: valid interval and future start > AC1: rejects a start before minute zero independently of the current time 2ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a request starting one minute after now 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a one-minute interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 0ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   × canBook — AC4: overlap detection > T01: accepts touching after an existing booking 8ms
+     → expected false to be true // Object.is equality
+   × canBook — AC4: overlap detection > T08: accepts touching before an existing booking 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   × canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+     → expected false to be true // Object.is equality
+   × canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request 0ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC5: Boolean result and no input mutation > AC5: leaves booking data unchanged when the request is rejected 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > T01: accepts touching after an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:156:7
+    154|         bookings,
+    155|       }),
+    156|     ).toBe(true);
+       |       ^
+    157|   });
+    158| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > T08: accepts touching before an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:170:7
+    168|         bookings,
+    169|       }),
+    170|     ).toBe(true);
+       |       ^
+    171|   });
+    172| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:257:7
+    255|         bookings,
+    256|       }),
+    257|     ).toBe(true);
+       |       ^
+    258|   });
+    259| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:278:20
+    276|     });
+    277| 
+    278|     expect(result).toBe(true);
+       |                    ^
+    279|     expect(typeof result).toBe("boolean");
+    280|     expect(bookings).toEqual(before);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 17 passed (21)
+   Start at  23:06:19
+   Duration  693ms (transform 67ms, setup 0ms, collect 72ms, tests 16ms, environment 0ms, prepare 173ms)
 ```
+
+Command: `npx.cmd --no-install vitest run` with `NO_COLOR=1`. Exit code: 1. This is the unchanged Week 07 suite on the exact provided function, before any repairs.
 
 ### 2.3 One failing test per bug
 

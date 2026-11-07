@@ -12,6 +12,8 @@ including anything an AI tool produced.
 
 Status: in progress. The two comparison chats have not been run. The student has not yet supplied personal hypotheses, typed the skill, reviewed patches or signed this disclosure. Unanswered declarations below are pending, not affirmative claims.
 
+Codex replaced only `canBook` in `app/project/src/booking.ts` with the unchanged provided function, kept the other declarations, ran the original 21 tests, and pasted the real failing output into report section 2.2. No repairs have been made.
+
 **`skills/bug-detector/SKILL.md` was typed by me from the deck's text, not generated:** yes / no
 
 **I applied the patches myself, one minimal change per bug, after reviewing what the assistant
