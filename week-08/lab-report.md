@@ -4,7 +4,7 @@
 **Group:** Monday 16:00-19:00
 **Date:** 2026-11-07
 
-**Work in progress:** The student supplied the manually typed skill, simulation screenshot and two comparison responses. Codex recorded the comparison and applied the BUG-A-only patch with real test evidence. This stage awaits student review and a separate commit before BUG-B is repaired. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
+**Work in progress:** The student supplied the manually typed skill, simulation screenshot and two comparison responses. The BUG-A repair was committed as 5ec4326. Codex has now applied the BUG-B-only repair and recorded a successful full run of all 23 tests. This stage awaits student review and a separate BUG-B commit; final report review, structural checks and the declaration remain pending. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
 grader find your answers by them. You can add rows to any table, but never remove its header.
@@ -982,11 +982,53 @@ Result: BUG-A, T01, T08 and X2 now pass, while T09–T12 still reject genuine ov
 
 ### 8.2 The BUG-B patch and the final run
 
-The change as a diff, then the real output of the **full** suite. Every test must pass.
+The BUG-B patch deletes only `bookings.push({ start, end });` from `app/project/src/booking.ts`. A successful availability check now returns true without modifying the caller's array. Codex applied this change after reviewing the saved responses and the mutation failures recorded before the repair.
+
+```diff
+diff --git a/week-08/app/project/src/booking.ts b/week-08/app/project/src/booking.ts
+index 58a4360..3633158 100644
+--- a/week-08/app/project/src/booking.ts
++++ b/week-08/app/project/src/booking.ts
+@@ -48,6 +48,5 @@ export function canBook({ start, end, now, blocked, bookings }: {
+     if (start < b.end && end > b.start) return false;
+   }
+   // keep the room's list current with the slot that was just found free
+-  bookings.push({ start, end });
+   return true;
+ }
+```
+
+Targeted command: `npx.cmd --no-install vitest run -t "BUG-B"`, with `NO_COLOR=1`. Exit code: 0. The other 22 tests are excluded only by the command's name filter.
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ✓ project/src/booking.test.ts (23 tests | 22 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 22 skipped (23)
+   Start at  23:49:47
+   Duration  672ms (transform 69ms, setup 0ms, collect 75ms, tests 3ms, environment 0ms, prepare 182ms)
 ```
+
+Full command: `npx.cmd --no-install vitest run`, with `NO_COLOR=1`. Exit code: 0.
+
+```text
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ✓ project/src/booking.test.ts (23 tests) 8ms
+
+ Test Files  1 passed (1)
+      Tests  23 passed (23)
+   Start at  23:49:50
+   Duration  726ms (transform 71ms, setup 0ms, collect 77ms, tests 8ms, environment 0ms, prepare 205ms)
+```
+
+All 23 tests pass: the 21 original Week 07 tests plus BUG-A and BUG-B. The non-touching BUG-B test and the original AC5 tests confirm unchanged booking arrays for their tested inputs. The endpoint-touch cases pass, and genuine-overlap cases remain rejected. These are actual local test results; the AI-proposed snippets were not substituted for the existing suite.
+
+The provided comment above the deleted push still refers to updating the room's list. It is now outdated and is retained to keep the repair to exactly one deleted line in this commit. The two repairs together change one overlap condition and remove one mutation statement.
 
 ---
 
