@@ -1,0 +1,36 @@
+Week 08 - debugging with a skill: the repair, the tests, the skill, the report
+
+PASS   B1   project in app/ with a booking module                                   app/project/src/booking.ts, function canBook
+PASS   B2   the page imports and calls canBook                                      called from app/project/src/App.tsx
+PASS   B3   canBook is the provided one, changed in 4 lines or fewer                2 line(s) changed in the body
+PASS   B4   BUG-A fixed: touching endpoints are not an overlap                      the overlap test is strict
+PASS   B5   BUG-B fixed: canBook does not change the bookings                       nothing in canBook changes the bookings
+PASS   B6   export is clean: no node_modules, no .env, under 5 MB                   clean
+PASS   S1   suite beside the module imports vitest and the real canBook             app/project/src/booking.test.ts imports vitest and ./booking
+PASS   S2   nothing mocked, skipped, focused or table-driven                        real function, every test runs
+PASS   S3   the Week 07 suite kept: T01-T14, 19 tests or more                       T01-T14 present, 23 tests
+PASS   S4   regression test BUG-A: a touching request, exactly true                 BUG-A regression test present
+PASS   S5   regression test BUG-B: an Available call, bookings compared             BUG-B regression test present
+PASS   K1   skills/bug-detector/SKILL.md exists, named exactly                      skills/bug-detector/SKILL.md
+PASS   K2   YAML frontmatter between two --- lines                                  frontmatter with name and description
+PASS   K3   name: bug-detector                                                      name: bug-detector
+PASS   K4   description says what and WHEN                                          description says when to use it
+PASS   K5   the seven-step procedure from the deck                                  all seven steps
+PASS   K6   no secrets or keys in the skill                                         nothing that looks like a key or password
+PASS   K7   skills/bug-detector.zip holds bug-detector/SKILL.md, the same file      bug-detector/SKILL.md, same as the committed file
+PASS   E1   installation screenshot: evidence/install.png                           evidence/install.png
+PASS   R1   report 2.1: the Week 07 suite green on your own code                    21 passed (21)
+PASS   R2   report 2.2-2.3: failures on the buggy code, BUG-A and BUG-B among them  4 failed on the buggy code; BUG-A and BUG-B fail before the fix
+PASS   R3   report 8.2: the final run, all passing, same suite                      23 passed (23)
+PASS   L1   report 1: assistant, model, where installed, where run, Vitest          setup recorded
+PASS   L2   report 3: defect log for BUG-A and BUG-B                                2 defect(s) logged
+PASS   L3   report 4: checks answered, ZIP listing, installation                    checks, listing and installation recorded
+PASS   L4   report 5: the question without the skill, and the answer                question, input and answer
+PASS   L5   report 6: the skill question, the same input, and the answer            same input, skill question, answer
+PASS   L6   report 7: both columns of the comparison                                all five criteria judged
+PASS   L7   report 8: one diff per bug                                              a diff for each bug
+PASS   L8   report 9.2: one limitation, 20 words or more                            68 words
+PASS   L9   report 10: conclusion of 80-150 words                                   122 words
+------------------------------------------------------------------------------
+SUMMARY pass=31 fail=0 error=0   (31 checks)
+Files and shape are clean. Whether the skill helped is your judgement in section 7, not this.

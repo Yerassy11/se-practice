@@ -4,7 +4,7 @@
 **Group:** Monday 16:00-19:00
 **Date:** 2026-11-07
 
-**Work in progress:** The student supplied the manually typed skill, simulation screenshot and two comparison responses. The BUG-A repair was committed as 5ec4326. Codex has now applied the BUG-B-only repair and recorded a successful full run of all 23 tests. This stage awaits student review and a separate BUG-B commit; final report review, structural checks and the declaration remain pending. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
+**Verification status:** Both repairs are committed separately: BUG-A as 5ec4326 and BUG-B as 0a68c1c. All 23 Vitest tests pass. The structural check reports 31 PASS, 0 FAIL and 0 ERROR. Student review, the final AI disclosure and the declaration remain pending. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
 grader find your answers by them. You can add rows to any table, but never remove its header.
@@ -1040,7 +1040,11 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | All 31 structural checks passed; no FAIL or ERROR remains. |
+
+Current run: **31 PASS / 0 FAIL / 0 ERROR**, using Python 3.12 already installed through uv. Full output: `evidence/checker-report-output.txt`. The earlier 30/1/0 result is retained in `evidence/checker-before-conclusion.txt` as intermediate evidence. The checker and validator scripts have not been edited. This structural result does not verify authorship or the accuracy of personal declarations.
+
+Local cleanup: npm dependencies were moved from `app/node_modules` to the Git-ignored parent directory `week-08/node_modules`. All 23 tests passed again after the move (`evidence/post-cleanup-vitest-output.txt`). Vitest recreated a results cache under `app/node_modules`; that generated cache was moved to the ignored repository `.tmp/` directory before running the structural checker. B6 now passes. A later Vitest run can recreate this cache and require cleanup before checking the export again.
 
 ### 9.2 One limitation of AI-assisted debugging
 
@@ -1060,3 +1064,4 @@ The response without the skill correctly named mutation but proposed an AC5 test
      visible after the BUG-A patch: the AC5 test had been failing for the wrong reason." -->
 
 <!-- Write your conclusion below this line -->
+Both responses identified BUG-A and BUG-B and proposed the same two minimal changes, so the skill did not reveal an additional defect. However, it helped in the “Reproducible test” comparison: its non-touching AC5 request could expose mutation independently, whereas the response without the skill proposed a touching request that BUG-A rejected first. After changing the overlap comparisons and removing the array mutation in separate commits, all 23 tests passed. These results support correct endpoint handling, overlap rejection, and unchanged booking data for the tested inputs, but they do not verify desktop or mobile UI behavior or every possible input. This comparison showed a useful improvement in test design, although one pair of responses cannot prove that the skill consistently produces better answers.
