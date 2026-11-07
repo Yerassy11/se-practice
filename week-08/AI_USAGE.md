@@ -14,6 +14,8 @@ Status: in progress. The two comparison chats have not been run. The student has
 
 Codex replaced only `canBook` in `app/project/src/booking.ts` with the unchanged provided function, kept the other declarations, ran the original 21 tests, and pasted the real failing output into report section 2.2. No repairs have been made.
 
+Codex added the BUG-A and BUG-B regression tests in `app/project/src/booking.test.ts`, ran all 23 tests on the buggy function (6 failed, 17 passed), and recorded the unedited terminal output in section 2.3. Codex filled the factual input/expected/actual columns of section 3; the student's own explanations remain pending. Codex also prepared identical shared input and two prompt files in `evidence/`; these prompts have not been sent to comparison chats.
+
 **`skills/bug-detector/SKILL.md` was typed by me from the deck's text, not generated:** yes / no
 
 **I applied the patches myself, one minimal change per bug, after reviewing what the assistant

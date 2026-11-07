@@ -175,8 +175,172 @@ Run them **on the buggy code**. Both must fail here. That is the evidence that e
 its bug.
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ❯ project/src/booking.test.ts (23 tests | 6 failed) 19ms
+   × BUG-A: allows a 30-minute request touching two bookings at both endpoints (AC4) 8ms
+     → expected false to be true // Object.is equality
+   × BUG-B: an available non-touching request leaves booking data unchanged (AC5) 5ms
+     → expected [ { start: 600, end: 660 }, …(1) ] to deeply equal [ { start: 600, end: 660 } ]
+   ✓ canBook — AC1: valid interval and future start > AC1: rejects a start before minute zero independently of the current time 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a request starting one minute after now 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a one-minute interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 0ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   × canBook — AC4: overlap detection > T01: accepts touching after an existing booking 1ms
+     → expected false to be true // Object.is equality
+   × canBook — AC4: overlap detection > T08: accepts touching before an existing booking 1ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   × canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+     → expected false to be true // Object.is equality
+   × canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request 0ms
+     → expected false to be true // Object.is equality
+   ✓ canBook — AC5: Boolean result and no input mutation > AC5: leaves booking data unchanged when the request is rejected 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  project/src/booking.test.ts > BUG-A: allows a 30-minute request touching two bookings at both endpoints (AC4)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:10:81
+      8|   ];
+      9| 
+     10|   expect(canBook({ start: 660, end: 690, now: 540, blocked: false, boo…
+       |                                                                                 ^
+     11| });
+     12| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  project/src/booking.test.ts > BUG-B: an available non-touching request leaves booking data unchanged (AC5)
+AssertionError: expected [ { start: 600, end: 660 }, …(1) ] to deeply equal [ { start: 600, end: 660 } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "end": 660,
+      "start": 600,
+    },
++   {
++     "end": 780,
++     "start": 720,
++   },
+  ]
+
+ ❯ project/src/booking.test.ts:18:20
+     16| 
+     17|   expect(canBook({ start: 720, end: 780, now: 540, blocked: false, boo…
+     18|   expect(bookings).toEqual(before);
+       |                    ^
+     19| });
+     20| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > T01: accepts touching after an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:173:7
+    171|         bookings,
+    172|       }),
+    173|     ).toBe(true);
+       |       ^
+    174|   });
+    175| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > T08: accepts touching before an existing booking
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:187:7
+    185|         bookings,
+    186|       }),
+    187|     ).toBe(true);
+       |       ^
+    188|   });
+    189| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:274:7
+    272|         bookings,
+    273|       }),
+    274|     ).toBe(true);
+       |       ^
+    275|   });
+    276| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+ FAIL  project/src/booking.test.ts > canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ project/src/booking.test.ts:295:20
+    293|     });
+    294| 
+    295|     expect(result).toBe(true);
+       |                    ^
+    296|     expect(typeof result).toBe("boolean");
+    297|     expect(bookings).toEqual(before);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 17 passed (23)
+   Start at  23:07:01
+   Duration  745ms (transform 67ms, setup 0ms, collect 73ms, tests 19ms, environment 0ms, prepare 194ms)
 ```
+
+Command: `npx.cmd --no-install vitest run` with `NO_COLOR=1`. Exit code: 1. Codex added two tests while preserving all 21 original Week 07 tests. BUG-A uses 660–690 between 600–660 and 690–750, a different input from the existing X2 test. BUG-B uses 720–780 with 600–660 and fails specifically at the array comparison after the Boolean assertion passes. Neither bug has been repaired.
 
 ---
 
@@ -187,8 +351,10 @@ One row per defect. At least **BUG-A and BUG-B**. "Suspected cause" is your hypo
 
 | Defect | Test ID | Input | Expected | Actual | Suspected cause (line and why) |
 | --- | --- | --- | --- | --- | --- |
-| BUG-A | | | | | |
-| BUG-B | | | | | |
+| BUG-A | BUG-A (AC4) | now=540, start=660, end=690, blocked=false, bookings=[{start:600,end:660},{start:690,end:750}] | true | false | Pending: student must supply their own explanation |
+| BUG-B | BUG-B (AC5) | now=540, start=720, end=780, blocked=false, bookings=[{start:600,end:660}] | true; bookings unchanged | true; {start:720,end:780} appended to bookings | Pending: student must supply their own explanation |
+
+The inputs and observations above were recorded by Codex from the actual tests. They are not student-authored hypotheses. The student must disclose this assistance and supply their own understanding before the two fresh-chat comparison experiments.
 
 ---
 

@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { canBook, type Booking } from "./booking";
 
+it("BUG-A: allows a 30-minute request touching two bookings at both endpoints (AC4)", () => {
+  const bookings: Booking[] = [
+    { start: 600, end: 660 },
+    { start: 690, end: 750 },
+  ];
+
+  expect(canBook({ start: 660, end: 690, now: 540, blocked: false, bookings })).toBe(true);
+});
+
+it("BUG-B: an available non-touching request leaves booking data unchanged (AC5)", () => {
+  const bookings: Booking[] = [{ start: 600, end: 660 }];
+  const before = structuredClone(bookings);
+
+  expect(canBook({ start: 720, end: 780, now: 540, blocked: false, bookings })).toBe(true);
+  expect(bookings).toEqual(before);
+});
+
 const NOW = 540;
 
 /**
