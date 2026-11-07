@@ -8,7 +8,9 @@ including anything an AI tool produced.
 | --- | --- | --- | --- |
 | | | diagnosis without the skill (Task 4) | none — "Do not edit code" |
 | | | diagnosis with bug-detector (Task 5) | none — "Do not edit code" |
-| | | | |
+| Codex | gpt-6-astra | Checked the copied Week 07 files against Git; installed dependencies; ran the baseline suite and recorded its real output. Further preparation is recorded below as it happens. | lab-report.md, AI_USAGE.md |
+
+Status: in progress. The two comparison chats have not been run. The student has not yet supplied personal hypotheses, typed the skill, reviewed patches or signed this disclosure. Unanswered declarations below are pending, not affirmative claims.
 
 **`skills/bug-detector/SKILL.md` was typed by me from the deck's text, not generated:** yes / no
 

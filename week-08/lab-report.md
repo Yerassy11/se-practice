@@ -2,7 +2,9 @@
 
 **Name:**
 **Group:**
-**Date:**
+**Date:** 2026-11-07
+
+**Work in progress:** Codex is assisting with setup, real test execution and recording evidence. Personal hypotheses, manual skill entry and the two fresh-chat experiments are still pending. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
 grader find your answers by them. You can add rows to any table, but never remove its header.
@@ -13,12 +15,12 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| Assistant I debugged with (tool) | |
-| Exact model (with its version, or `not displayed`) | |
-| Where the skill was installed (ChatGPT / Claude web / Claude Code / prompt-only simulation) | |
-| Where I ran the tests (Bolt terminal / my computer / Codespace) | |
-| Vitest version (the `RUN  v…` line of a run) | |
-| Language of my booking module (`ts` or `js`) — the file I copied from `buggy/` | |
+| Assistant I debugged with (tool) | Codex (preparation and test execution; comparison chats pending) |
+| Exact model (with its version, or `not displayed`) | gpt-6-astra (this Codex session) |
+| Where the skill was installed (ChatGPT / Claude web / Claude Code / prompt-only simulation) | Not installed yet |
+| Where I ran the tests (Bolt terminal / my computer / Codespace) | My computer, Windows PowerShell; Codex ran commands in C:/Users/Acer/Desktop/SE/week-08/app |
+| Vitest version (the `RUN  v…` line of a run) | 3.2.4 |
+| Language of my booking module (`ts` or `js`) — the file I copied from `buggy/` | ts |
 
 ---
 
@@ -30,8 +32,18 @@ The **real** output of your Week 07 suite, run in `week-08/app/` **before** you 
 anything. It should be green. If it is not, say why under the block.
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ✓ project/src/booking.test.ts (21 tests) 6ms
+
+ Test Files  1 passed (1)
+      Tests  21 passed (21)
+   Start at  23:04:50
+   Duration  760ms (transform 93ms, setup 0ms, collect 97ms, tests 6ms, environment 0ms, prepare 248ms)
 ```
+
+Command: `npx.cmd --no-install vitest run` with `NO_COLOR=1`. Exit code: 0. Both `booking.ts` and `booking.test.ts` matched the Week 07 branch before the run; all 21 original tests passed.
 
 ### 2.2 The same suite on the provided canBook
 
