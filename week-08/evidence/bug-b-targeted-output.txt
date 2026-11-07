@@ -1,0 +1,9 @@
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-08/app
+
+ ✓ project/src/booking.test.ts (23 tests | 22 skipped) 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 22 skipped (23)
+   Start at  23:49:47
+   Duration  672ms (transform 69ms, setup 0ms, collect 75ms, tests 3ms, environment 0ms, prepare 182ms)
