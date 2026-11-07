@@ -1,7 +1,7 @@
 # Week 08 — Lab report
 
-**Name:**
-**Group:**
+**Name:** Khudaibergen Yerassyl
+**Group:** Monday 16:00-19:00
 **Date:** 2026-11-07
 
 **Work in progress:** Codex is assisting with setup, real test execution and recording evidence. Personal hypotheses, manual skill entry and the two fresh-chat experiments are still pending. The existing Week 07 layout is retained: commands run from `week-08/app/`, sources are in `project/src/`.
@@ -15,10 +15,10 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| Assistant I debugged with (tool) | Codex (preparation and test execution; comparison chats pending) |
-| Exact model (with its version, or `not displayed`) | gpt-6-astra (this Codex session) |
-| Where the skill was installed (ChatGPT / Claude web / Claude Code / prompt-only simulation) | Not installed yet |
-| Where I ran the tests (Bolt terminal / my computer / Codespace) | My computer, Windows PowerShell; Codex ran commands in C:/Users/Acer/Desktop/SE/week-08/app |
+| Assistant I debugged with (tool) | ChatGPT |
+| Exact model (with its version, or `not displayed`) | gpt-6-astra  |
+| Where the skill was installed ChatGPT |
+| Where I ran the tests (Bolt terminal / my computer / Codespace) | My computer, Windows PowerShell |
 | Vitest version (the `RUN  v…` line of a run) | 3.2.4 |
 | Language of my booking module (`ts` or `js`) — the file I copied from `buggy/` | ts |
 
@@ -351,10 +351,10 @@ One row per defect. At least **BUG-A and BUG-B**. "Suspected cause" is your hypo
 
 | Defect | Test ID | Input | Expected | Actual | Suspected cause (line and why) |
 | --- | --- | --- | --- | --- | --- |
-| BUG-A | BUG-A (AC4) | now=540, start=660, end=690, blocked=false, bookings=[{start:600,end:660},{start:690,end:750}] | true | false | Pending: student must supply their own explanation |
-| BUG-B | BUG-B (AC5) | now=540, start=720, end=780, blocked=false, bookings=[{start:600,end:660}] | true; bookings unchanged | true; {start:720,end:780} appended to bookings | Pending: student must supply their own explanation |
+| BUG-A | BUG-A (AC4) | now=540, start=660, end=690, blocked=false, bookings=[{start:600,end:660},{start:690,end:750}] | true | false | The condition `start <= b.end && end >= b.start` treats touching endpoints as an overlap. For start=660 and b.end=660, the function returns false, although AC4 allows touching bookings. |
+| BUG-B | BUG-B (AC5) | now=540, start=720, end=780, blocked=false, bookings=[{start:600,end:660}] | true; bookings unchanged | true; {start:720,end:780} appended to bookings | The line `bookings.push({ start, end })` adds the requested interval to the original array before returning true. This changes booking data during an availability check, violating AC5. |
 
-The inputs and observations above were recorded by Codex from the actual tests. They are not student-authored hypotheses. The student must disclose this assistance and supply their own understanding before the two fresh-chat comparison experiments.
+I identified the suspected causes myself. AI helped clarify the wording of my explanations.
 
 ---
 
@@ -364,16 +364,17 @@ The inputs and observations above were recorded by Codex from the actual tests. 
 
 | Check | yes / no |
 | --- | --- |
-| The file is plain UTF-8 text, named exactly `SKILL.md` (not `SKILL.md.txt`) | yes / no |
-| The first and the closing YAML delimiter are exactly three hyphens: `---` | yes / no |
-| `name` is lowercase with hyphens, and `description` says WHEN to use it | yes / no |
-| I read the whole file once: no passwords, API keys or private student data | yes / no |
+| The file is plain UTF-8 text, named exactly `SKILL.md` (not `SKILL.md.txt`) | yes |
+| The first and the closing YAML delimiter are exactly three hyphens: `---` | yes |
+| `name` is lowercase with hyphens, and `description` says WHEN to use it | yes |
+| I read the whole file once: no passwords, API keys or private student data | yes |
 
 **The contents of `skills/bug-detector.zip`.** Paste the listing (Windows: open the ZIP and copy
 the paths; macOS/Linux: `unzip -l skills/bug-detector.zip`):
 
 ```text
-(paste here)
+bug-detector\.gitkeep
+bug-detector\SKILL.md
 ```
 
 **Installation.** Where you uploaded it, what the upload said, and whether a new chat showed the
@@ -382,6 +383,7 @@ Screenshot of the result: `evidence/install.png`.
 
 <!-- Write below this line -->
 
+I used a prompt-only simulation in ChatGPT, not an installed skill. I supplied the contents of my manually typed SKILL.md as instructions in a separate chat. The assistant acknowledged the seven-step procedure and waited for debugging input. The screenshot is saved as evidence/install.png. I recorded the model as Astra-6
 ---
 
 ## 5. Task 4 — without the skill
