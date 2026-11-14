@@ -23,14 +23,75 @@ them. Replace every `<!-- comment -->` with your own text (comments are ignored 
 Paste your final `tool/check_room.json`, then fill the table: one row per constraint you wrote.
 
 ```json
-
+{
+  "name": "check_room",
+  "description": "Check whether a room is available for a requested interval. All times are whole minutes since midnight in the range 0 to 1440, where 1440 means the end of the day. Provide the current time, blocked status, and existing bookings. This tool only checks availability; it does not save or create a booking.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "start": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "Requested start time in whole minutes since midnight."
+      },
+      "end": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "Requested end time in whole minutes since midnight; 1440 means 24:00."
+      },
+      "now": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1440,
+        "description": "Current time in whole minutes since midnight."
+      },
+      "blocked": {
+        "type": "boolean",
+        "description": "Whether the room is blocked."
+      },
+      "bookings": {
+        "type": "array",
+        "description": "Existing bookings; an empty array means there are none.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "start": { "type": "integer", "minimum": 0, "maximum": 1440 },
+            "end": { "type": "integer", "minimum": 0, "maximum": 1440 }
+          },
+          "required": ["start", "end"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": ["start", "end", "now", "blocked", "bookings"],
+    "additionalProperties": false
+  }
+}
 ```
 
 | Field | Constraint (e.g. `"type": "integer"`, `"maximum": 1440`) | What goes wrong without it |
 | --- | --- | --- |
-| | | |
-| | | |
-| | | |
+| `name` | `"check_room"` | The model could call a tool with the wrong name. |
+| `description` | 25+ words; minutes since midnight, 0–1440, checks only and does not save | The model could use clock strings or assume the call creates a booking. |
+| `inputSchema` | `"type": "object"` | Arguments could have the wrong overall shape. |
+| `inputSchema.required` | `start`, `end`, `now`, `blocked`, `bookings` | Missing arguments, including `now` in S04, would be accepted. |
+| `inputSchema.additionalProperties` | `false` | An unknown field such as `room` in S05 would be accepted. |
+| `start` | `"type": "integer"` | Fractional minutes such as S10's `600.5` would be accepted. |
+| `start` | `"minimum": 0` | A start before midnight, such as S06's `-30`, would be accepted. |
+| `start` | `"maximum": 1440` | A start after the day ends would be accepted. |
+| `end` | `"type": "integer"` | A clock string such as S03's `"11:00"` would be accepted. |
+| `end` | `"minimum": 0` | An end before midnight would be accepted. |
+| `end` | `"maximum": 1440` | An end beyond the day, such as S07's `1500`, would be accepted; `1440` remains valid in S11. |
+| `now` | `"type": "integer"` | The current time could be a string or a fractional minute. |
+| `now` | `"minimum": 0`, `"maximum": 1440` | The current time could fall outside the day. |
+| `blocked` | `"type": "boolean"` | A string such as S09's `"false"` would be accepted. |
+| `bookings` | `"type": "array"` | Existing bookings could be supplied in the wrong shape; `[]` is valid in S02. |
+| `bookings.items` | `"type": "object"` | A pair such as S12's `[660, 720]` would be accepted as a booking. |
+| `bookings.items.required` | `start`, `end` | An incomplete booking such as S08's `{ "start": 660 }` would be accepted. |
+| `bookings.items.additionalProperties` | `false` | An unexpected field inside a booking would be accepted. |
+| `bookings.items.start` and `.end` | `"type": "integer"`, `"minimum": 0`, `"maximum": 1440` | A booking boundary could be a string, fractional minute, or outside the day. |
 
 ## 3. The twelve calls — first run and final run
 
@@ -41,18 +102,18 @@ On the untouched template, the first run had **3 PASS and 9 FAIL** across S01–
 
 | Case | First run | Final run | What you changed |
 | --- | --- | --- | --- |
-| S01 | PASS | | |
-| S02 | PASS | | |
-| S03 | FAIL | | |
-| S04 | FAIL | | |
-| S05 | FAIL | | |
-| S06 | FAIL | | |
-| S07 | FAIL | | |
-| S08 | FAIL | | |
-| S09 | FAIL | | |
-| S10 | FAIL | | |
-| S11 | PASS | | |
-| S12 | FAIL | | |
+| S01 | PASS | PASS | No change; valid call remains accepted. |
+| S02 | PASS | PASS | No change; empty `bookings` remains accepted. |
+| S03 | FAIL | PASS | `end.type: integer` rejects `"11:00"`. |
+| S04 | FAIL | PASS | Top-level `required` includes `now`. |
+| S05 | FAIL | PASS | Top-level `additionalProperties: false` rejects `room`. |
+| S06 | FAIL | PASS | `start.minimum: 0` rejects `-30`. |
+| S07 | FAIL | PASS | `end.maximum: 1440` rejects `1500`. |
+| S08 | FAIL | PASS | Nested `bookings.items.required` includes `end`. |
+| S09 | FAIL | PASS | `blocked.type: boolean` rejects `"false"`. |
+| S10 | FAIL | PASS | `start.type: integer` rejects `600.5`. |
+| S11 | PASS | PASS | No change; `end.maximum: 1440` allows `1440`. |
+| S12 | FAIL | PASS | `bookings.items.type: object` rejects `[660, 720]`. |
 
 ## 4. Function calling — what the model wrote
 
