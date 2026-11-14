@@ -180,20 +180,51 @@ The schema checks the shape of a `check_room` call: required fields, types, allo
 
 <!-- The commit you would make before letting such an agent edit anything: its real SHA (git log --oneline),
      the exact command that returns you to it, and what that command would throw away. -->
-
+658364d
+git reset --hard 658364d
 ## 8. Checker output
 
 Paste the **whole** output of your last `python tests/check_tool.py`, unedited.
 
 ```text
+PASS  D1    tool/check_room.json exists and is valid JSON
+PASS  D2    has name, description and inputSchema
+PASS  D3    name is exactly "check_room"
+PASS  D4    description: 25+ words, says minutes, 1440, and that it does not save
+PASS  D5    inputSchema: an object with exactly the five fields, all required
+PASS  D6    inputSchema uses only the keywords listed in README section 5
+PASS  S01   the R1 call, valid -> accept
+PASS  S02   no existing bookings: bookings = [] -> accept
+PASS  S03   end as a string: "11:00" -> refuse
+PASS  S04   now missing -> refuse
+PASS  S05   an extra field: "room": "204" -> refuse
+PASS  S06   start below the day: -30 -> refuse
+PASS  S07   end beyond the day: 1500 -> refuse
+PASS  S08   a booking with no end: {start: 660} -> refuse
+PASS  S09   blocked as a string: "false" -> refuse
+PASS  S10   start not a whole minute: 600.5 -> refuse
+PASS  S11   end at the end of the day: 1440 -> accept
+PASS  S12   a booking as a pair: [660, 720] -> refuse
+PASS  F1    calls\r1.json: a call to check_room
+PASS  F2    calls\r1.json: arguments valid against your schema
+PASS  F3    calls\r1.json: arguments equal the expected ones (README section 5, Part 2)
+PASS  F4    calls\r2.json: a call to check_room
+PASS  F5    calls\r2.json: arguments valid against your schema
+PASS  F6    calls\r2.json: arguments equal the expected ones (README section 5, Part 2)
+PASS  F7    calls/r3: exactly one of r3.json (it called) or r3.txt (it asked), not empty
+PASS  L1    section 5 names at least two acceptance criteria (AC1-AC6) the schema cannot check
+PASS  L2    section 6: A1-A8 each have allow / ask / block and a reason of 5+ words
+PASS  L3    section 7 names the checkpoint commit (a SHA)
+PASS  L4    section 10: a conclusion of 80-150 words
+PASS  L5    AI_USAGE.md filled in (a tool row, and signed)
 
+SUMMARY: 30 PASS · 0 FAIL · 0 ERROR  (of 30 checks)
 ```
 
 ## 9. What still fails
 
-<!-- Every check in submission.yml known_fails, with the reason. "None" if all 30 pass. -->
+None.
 
 ## 10. Conclusion (80–150 words)
 
-<!-- What did you learn about the line between the schema, the model and the function? Be specific:
-     name a case, a request or an action. "Tool definitions are important" is worth nothing. -->
+The schema protects the shape of a tool call. It rejects the string end time in S03, the missing `now` in S04, and the booking pair in S12, but it cannot decide whether a valid interval is available. That decision belongs to `canBook`: it must check duration, blocked status, overlaps, and whether `start` is after `now`. The model has a different responsibility. For R1 and R2 it converted the stated times into minutes and supplied the required arguments. For R3 it asked for missing details instead of inventing a time or booking state. An agent also needs limits beyond the tool schema. A1 is safe because it only checks availability; A3 would violate AC2, while A5 and A8 risk losing work or exposing secrets.
