@@ -121,16 +121,25 @@ For each request, paste the model's reply exactly, then judge it against the req
 
 ### R1
 
-```text
-
+```
+{"name":"check_room","arguments":{"start":600,"end":660,"now":540,"blocked":false,"bookings":[{"start":660,"end":720}]}}
 ```
 
 <!-- Match? If F3 failed, which argument differs, and who was wrong: the model or the request? -->
 
 ### R2
 
-```text
-
+```
+{
+  "name": "check_room",
+  "arguments": {
+    "start": 840,
+    "end": 990,
+    "now": 810,
+    "blocked": true,
+    "bookings": []
+  }
+}
 ```
 
 <!-- Same. R2 is a call that SHOULD be made, although canBook will say Unavailable. Did the model refuse to call? -->
@@ -138,10 +147,10 @@ For each request, paste the model's reply exactly, then judge it against the req
 ### R3
 
 ```text
-
+What exact time tomorrow afternoon would you like the room for (for example, 2:00–4:00 PM)? Also, is the room blocked, are there any existing bookings, and what current time should I use for the availability check?
 ```
 
-<!-- What information was missing? Did the model ask, or call? If it called, which values did it invent, and from where? -->
+R3 gives neither an exact `start` nor an exact `end`: “tomorrow afternoon” does not fix a start time, and “a couple of hours” is not an exact interval. It also omits `now`, `blocked`, and `bookings`, all required by the schema. The model asked for those values instead of calling `check_room`; it invented no argument values. The 2:00–4:00 PM interval in its question is an example, not a submitted booking.
 
 ## 5. What the schema cannot check
 
