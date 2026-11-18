@@ -1,5 +1,34 @@
-' diagrams/after.puml — the same view of your FINAL code. It must show rooms, booking, filter
-' and the UI (App and any components), with an arrow for each import. Replace this stub.
-'
 @startuml
+title SIS 04 current code — actual modules and imports
+left to right direction
+skinparam componentStyle rectangle
+
+component "project/src/App.tsx" as App
+component "app/src/rooms.ts\nROOMS" as rooms
+component "app/src/filter.ts\nfilterRooms" as filter
+component "app/src/booking.ts\ncanBook, checkRoom" as booking
+component "project/src/components/RoomCard.tsx" as RoomCard
+component "project/src/components/BookingForm.tsx" as BookingForm
+component "project/src/components/RoomTimeline.tsx" as RoomTimeline
+component "project/src/components/DecisionPanel.tsx" as DecisionPanel
+component "project/src/lib/time.ts" as Time
+component "project/src/types.ts" as Types
+component "project/src/booking.ts\ncompatibility re-export" as LegacyBooking
+
+App --> rooms
+App --> filter
+App --> booking
+App --> RoomCard
+App --> BookingForm
+App --> RoomTimeline
+App --> DecisionPanel
+App --> Time
+App --> Types
+booking --> rooms
+filter --> rooms
+RoomCard --> rooms
+RoomTimeline --> Time
+RoomTimeline --> Types
+DecisionPanel --> Types
+LegacyBooking --> booking
 @enduml

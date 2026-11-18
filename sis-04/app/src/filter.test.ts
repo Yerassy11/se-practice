@@ -24,4 +24,8 @@ describe("filterRooms", () => {
   it("F2: accepts a room when no equipment is required", () => {
     expect(filterRooms(rooms, { attendees: 7, equipment: [] }).map((room) => room.id)).toEqual(["small", "exact", "large"]);
   });
+
+  it("F4: returns no rooms when requirements have no match", () => {
+    expect(filterRooms(rooms, { attendees: 21, equipment: ["projector"] })).toEqual([]);
+  });
 });

@@ -2,9 +2,11 @@ interface BookingFormProps {
   currentTime: string;
   startTime: string;
   endTime: string;
+  endAt24: boolean;
   onCurrentTime: (v: string) => void;
   onStartTime: (v: string) => void;
   onEndTime: (v: string) => void;
+  onEndAt24: (v: boolean) => void;
   onSubmit: () => void;
   onReset: () => void;
 }
@@ -13,9 +15,11 @@ export function BookingForm({
   currentTime,
   startTime,
   endTime,
+  endAt24,
   onCurrentTime,
   onStartTime,
   onEndTime,
+  onEndAt24,
   onSubmit,
   onReset,
 }: BookingFormProps) {
@@ -52,10 +56,16 @@ export function BookingForm({
             type="time"
             value={endTime}
             onChange={(e) => onEndTime(e.target.value)}
-            required
+            required={!endAt24}
+            disabled={endAt24}
           />
         </label>
       </div>
+
+      <label className="check-option end-at-24">
+        <input type="checkbox" checked={endAt24} onChange={(e) => onEndAt24(e.target.checked)} />
+        <span>End at 24:00</span>
+      </label>
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary">
