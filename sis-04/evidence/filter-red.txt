@@ -1,0 +1,26 @@
+PS C:\Users\Acer\Desktop\SE\sis-04\app> npx vitest run
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/sis-04/app
+
+ ✓ project/src/booking.test.ts (23 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/filter.test.ts [ src/filter.test.ts ]
+Error: Cannot find module './filter' imported from 'C:/Users/Acer/Desktop/SE/sis-04/app/src/filter.test.ts'
+ ❯ src/filter.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import { filterRooms } from "./filter";
+       | ^
+      3| import type { Room } from "./rooms";
+      4|
+
+Caused by: Error: Failed to load url ./filter (resolved id: ./filter) in C:/Users/Acer/Desktop/SE/sis-04/app/src/filter.test.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22907:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  23 passed (23)
+   Start at  11:00:15
+   Duration  680ms (transform 112ms, setup 0ms, collect 78ms, tests 6ms, environment 0ms, prepare 361ms)

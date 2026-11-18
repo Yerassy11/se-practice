@@ -1,0 +1,43 @@
+@startuml
+title Week 08 baseline — actual modules and imports
+left to right direction
+skinparam componentStyle rectangle
+
+component "main.tsx" as Main
+component "App.tsx" as App
+component "types.ts" as Types
+component "data/rooms.ts\nSAMPLE_ROOMS" as Rooms
+component "booking.ts\ncanBook, getBookingIssue" as Booking
+component "lib/checkAvailability.ts" as Availability
+component "lib/time.ts" as Time
+component "components/RoomSelector.tsx" as Selector
+component "components/BookingForm.tsx" as Form
+component "components/RoomTimeline.tsx" as Timeline
+component "components/DecisionPanel.tsx" as Decision
+component "booking.test.ts" as Tests
+
+Main --> App
+App --> Types
+App --> Rooms
+App --> Booking
+App --> Availability
+App --> Time
+App --> Selector
+App --> Form
+App --> Timeline
+App --> Decision
+Rooms --> Types
+Availability --> Types
+Availability --> Booking
+Availability --> Time
+Selector --> Types
+Timeline --> Types
+Timeline --> Time
+Decision --> Types
+Tests --> Booking
+
+note bottom of App
+  Week 08 App holds selected room and form/result state.
+  handleSubmit calls both canBook and checkAvailability.
+end note
+@enduml
