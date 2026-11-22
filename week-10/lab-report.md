@@ -548,15 +548,15 @@ One row per missing or conflicting rule the answer reported, plus any it missed.
 | 5 | No rule forbidding secrets or credentials | missing | approve | `README.md` §3 forbids real keys and personal information; add a direct prohibition on secrets and credentials. |
 | 6 | Final instruction requires `npx netlify deploy --prod` | conflicting | approve | Remove the production deployment command and forbid external publishing; `README.md` §3 excludes external services. |
 | 7 | No requirement to run tests before proposing acceptance | missing | approve | Add a rule to run and report tests before proposing acceptance, including failures or unavailable commands. |
-| 8 | Tests command `npm run test:unit`; AI proposed `npm test` | conflicting | modify | `npm pkg get scripts` in the source package `app/project` has no `test` or `test:unit`. The baseline `npx vitest run` passed there using Vitest installed by the parent `app/package.json`. Document both install directories and run source commands from `app/project`. |
+| 8 | Tests command `npm run test:unit`; AI proposed `npm test` | conflicting | modify | `npm pkg get scripts` in the source package `app/project` has no `test` or `test:unit`. The baseline `npx vitest run` passed there using Vitest installed by the parent `app/package.json`. Document both installs; run dev/build through `npm --prefix project run ...` from `app/` and Vitest from `app/project/`. |
 
 ### 6.3 The approved patch
 
-`git diff -- week-10/app/AGENTS.md`, after applying the approved decisions and before committing:
+`git diff 5b41756 -- week-10/app/AGENTS.md`, showing the full approved patch against the baseline checkpoint:
 
 ```text
 diff --git a/week-10/app/AGENTS.md b/week-10/app/AGENTS.md
-index b786d88..a0cf3b5 100644
+index b786d88..6d6a8fb 100644
 --- a/week-10/app/AGENTS.md
 +++ b/week-10/app/AGENTS.md
 @@ -9,30 +9,32 @@ A React + TypeScript page (Vite) that tells a student whether a campus room is f
@@ -579,11 +579,13 @@ index b786d88..a0cf3b5 100644
  ## Commands
  
 -- Install: `npm install`
-+- Install: run `npm install` in `app/` and in `app/project/`; run the remaining commands from `app/project/`.
- - Dev server: `npm run dev`
+-- Dev server: `npm run dev`
 -- Tests: `npm run test:unit`
+-- Build: `npm run build`
++- Install: from `app/` run `npm install` and `npm --prefix project install`; run dev/build there and tests from `app/project/`.
++- Dev server: `npm --prefix project run dev`
 +- Tests: `npx vitest run`
- - Build: `npm run build`
++- Build: `npm --prefix project run build`
  
  ## You may
  
