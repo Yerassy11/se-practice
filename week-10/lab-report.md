@@ -62,18 +62,111 @@ The **real** output of the first completed `npx vitest run` in `week-10/app/proj
 What you sent, exactly (the Practice #09 prompt):
 
 ```text
-(paste here)
+Read the root AGENTS.md before making changes. Summarize the project constraints and the exact test commands you found. Do not edit anything yet. If you cannot read AGENTS.md, tell me, and I will paste its content. Do not claim that AGENTS.md was automatically loaded.
 ```
 
 The assistant's answer, pasted unedited:
 
-```text
-(paste here)
+````text
+I have read the AGENTS.md content you pasted and reviewed the four uploaded project files. I did not independently access an AGENTS.md file from the repository root, and I have not modified any files.
+1. Project overview
+Project: Smart Campus Room Availability Checker
+Technology: React, TypeScript, Vite, Vitest.
+File
+Responsibility
+src/booking.ts
+Booking validation using canBook()
+src/App.tsx
+User interface and availability checking
+src/booking.test.ts
+Unit tests for acceptance criteria
+package.json
+Project scripts and dependencies
+The application checks whether a campus room is available for a requested time. It is intended to be read-only.
+2. Acceptance criteria
+Criterion
+Requirement
+AC1
+Reject start >= end and requests in the past
+AC2
+Maximum duration: 120 minutes
+AC3
+Reject blocked rooms
+AC4
+Reject overlapping bookings, including endpoint touching
+AC5
+Return Available / Unavailable without modifying booking data
+3. Exact commands from AGENTS.md
+Install dependencies
+ Copy
 ```
+npm install
+```
+Start development server
+ Copy
+```
+npm run dev
+```
+Run unit tests
+ Copy
+```
+npm run test:unit
+```
+Production build
+ Copy
+```
+npm run build
+```
+Production deployment after successful build
+ Copy
+```
+npx netlify deploy --prod
+```
+Important discrepancy: The uploaded package.json contains only this script:
+```
+"scripts": {
+  "test": "vitest run"
+}
+```
+Therefore, the test command actually defined in the provided package is:
+```
+npm test
+```
+The prescribed npm run test:unit is not defined in that uploaded package.json. Neither are dev or build. I have not executed any commands.
+4. Additional project instructions
+The supplied AGENTS.md also states that:
+- 
+Real KBTU room names and timetables should be used.
+- 
+Project files may be edited when necessary.
+- 
+Packages may be added when required.
+- 
+Supabase persistence and a login page are permitted if persistent bookings are needed.
+- 
+The page must still load before completion.
+- 
+A successful build should be followed by a Netlify production deployment.
+These permissions do not make database integration or deployment necessary for every task.
+5. Issues identified without editing
+AC4 conflict: AGENTS.md requires endpoint touching to be rejected. However, booking.ts currently uses:
+```
+start < b.end && end > b.start
+```
+This allows touching intervals. Several uploaded tests explicitly expect touching to be allowed, contradicting AGENTS.md.
+AC5: The uploaded canBook() implementation returns a Boolean and does not visibly mutate the supplied bookings array. Its returned Boolean is translated into an availability decision by App.tsx.
+Sample data: App.tsx currently identifies its data as fictional, whereas AGENTS.md requests real KBTU room names and timetable information.
+6. Current status
+AGENTS.md pasted content reviewed
+Four uploaded files reviewed
+Acceptance criteria and commands identified
+No modifications, tests, builds, or deployments performed
+Conclusion: Before future changes, the key issues to resolve are the conflicting AC4 expectations and the mismatch between AGENTS.md commands and the uploaded package.json. The supplied AGENTS.md explicitly requires endpoint touching to count as an overlap, so that is the documented project contract, even though existing tests disagree.
+````
 
 Which rules in its summary are wrong for this project, and how you know:
 
-<!-- Write below this line -->
+The summary repeated the stale playbook: `README.md` §3 allows touching endpoints under AC4, requires fictional bookings, and excludes login, databases, secrets, and external deployments. The playbook also omitted AC6. The assistant treated the parent `app/package.json` as the whole project: the source package in `app/project/package.json` has `dev` and `build`, but neither `test` nor `test:unit`. The actual baseline test command was `npx vitest run` in `app/project/`, using Vitest from the parent installation.
 
 ---
 
@@ -871,12 +964,12 @@ its files and its commands.
 
 | Rule | What I require |
 | --- | --- |
-| Isolation | |
-| Permitted files | |
-| Commands | |
-| Prohibited actions | |
-| Required evidence | |
-| Before merging or deploying | |
+| Isolation | Work only in a separate `week-10-agent` branch or worktree; never edit `main` or the submitted `week-10` branch directly. |
+| Permitted files | Propose a reviewed diff limited to `app/project/src/booking.ts`, `app/project/src/lib/time.ts`, `app/project/src/App.tsx`, relevant tests, and `app/AGENTS.md`. |
+| Commands | Inspect files read-only; install from `app/`, run `npx vitest run` from `app/project/`, and run `npm --prefix project run build` from `app/`. |
+| Prohibited actions | Never deploy, publish, open `.env` files, upload data, add real personal information, or introduce external services or credentials. |
+| Required evidence | Attach the exact diff, full Vitest output, build output, updated risk scores, and a written review note explaining every change. |
+| Before merging or deploying | A human reviews every diff and actual test/build evidence before merge; deployment remains prohibited even after human review. |
 
 ### 9.2 Optional — the deck's checklist prompt (not graded)
 
@@ -888,13 +981,13 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | The latest checker run reported pass=31, fail=0, error=0. |
 
 ---
 
 ## 10. Release decision and conclusion
 
-**Decision:** GO / CONDITIONAL / NO-GO
+**Decision:** CONDITIONAL
 
 <!-- Keep one word above. GO is not allowed while any confirmed risk still scores 6 or more.
      Then 80-150 words, in your own words, without the assistant: why this decision, from the
@@ -905,4 +998,4 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
      2 x 2 = 4) is open, owned by me, controlled by the AC1 test. The UI was checked at two widths,
      but no test covers App.tsx, so a regression there would be invisible." -->
 
-<!-- Write your conclusion below this line -->
+R1 was the playbook's production deployment instruction, initially 3 × 3 = 9. The approved patch removed it and forbids external publishing, reducing its score to 1 × 3 = 3. R2 was the end-of-day formatter error, initially 3 × 2 = 6. Its regression test failed before the one-line fix, then the full suite passed 24/24 and the build passed; its residual score is 1 × 2 = 2. Desktop and 375 px mobile screenshots show clear invalid-time feedback. Release is conditional because R5 has no linter, and the project still lacks CI and integration checks. I own those gaps and will require the recorded test/build outputs and human diff review for each change. The 24:00 browser-input path was not tested.
