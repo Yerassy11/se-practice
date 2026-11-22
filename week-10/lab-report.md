@@ -688,59 +688,176 @@ Received: "00:00"
 
 ### 8.1 The first mitigation
 
-**Risk:** R?
+**Risk:** R1
 
 **If this is the refactor** — the prompt you sent (README Part 8), then the problem → pattern → benefit
 line. Otherwise leave both empty.
 
 ```text
-(the refactor prompt, if this is the refactor)
 ```
 
 **Problem → pattern → benefit:**
 
-**What I rejected from the agent's patch, and why:**
+**What I rejected from the agent's patch, and why:** The AI's proposed `npm test` command and unchanged AC4 rule were rejected in §6.2 because the source package has no `test` script and README §3 allows touching endpoints. The approved R1 change removed the production deployment instruction without changing application code.
 
 The diff I approved (`git diff`):
 
 ```text
-(paste here)
+diff --git a/week-10/app/AGENTS.md b/week-10/app/AGENTS.md
+index b786d88..6d6a8fb 100644
+--- a/week-10/app/AGENTS.md
++++ b/week-10/app/AGENTS.md
+@@ -9,30 +9,32 @@ A React + TypeScript page (Vite) that tells a student whether a campus room is f
+ requested time. The booking rule lives in `src/booking.ts` (`canBook`); the page is `src/App.tsx`;
+ the tests are in `src/booking.test.ts`.
+ 
+-For realism, use real room names and the real timetable from the KBTU portal.
++Use exactly one fictional room with fictional bookings; do not use real names or timetables.
+ 
+ ## Acceptance contract
+ 
+ - AC1 Reject start ≥ end and requests in the past.
+ - AC2 Enforce the maximum allowed duration (120 minutes).
+ - AC3 Reject a blocked room.
+-- AC4 Reject overlaps. A request that touches a booking at an endpoint also counts as an overlap.
++- AC4 Reject overlaps; allow bookings that only touch at endpoints.
+ - AC5 Return Available / Unavailable without changing booking data.
++- AC6 Preserve clear UI feedback on desktop and mobile.
+ 
+ ## Commands
+ 
+-- Install: `npm install`
+-- Dev server: `npm run dev`
+-- Tests: `npm run test:unit`
+-- Build: `npm run build`
++- Install: from `app/` run `npm install` and `npm --prefix project install`; run dev/build there and tests from `app/project/`.
++- Dev server: `npm --prefix project run dev`
++- Tests: `npx vitest run`
++- Build: `npm --prefix project run build`
+ 
+ ## You may
+ 
+ - Edit any file in the project.
+ - Add packages when a task needs them.
+-- If bookings need to persist, add a small Supabase table and a login page.
++- Do not add login, databases, persistence, secrets, credentials, personal data, or external services.
+ 
+ ## Before you finish
+ 
+ - Make sure the page still loads.
+-- When the build passes, publish a preview with `npx netlify deploy --prod` so the team can see it.
++- Run and report tests before proposing acceptance; disclose failures or unavailable checks.
++- Do not deploy or publish externally; require human approval before release.
 ```
 
 ### 8.2 The second mitigation
 
-**Risk:** R?
+**Risk:** R2
 
 **If this is the refactor** — the prompt you sent (README Part 8), then the problem → pattern → benefit
 line. Otherwise leave both empty.
 
 ```text
-(the refactor prompt, if this is the refactor)
+Refactor the availability logic into a small, pure module, keeping the existing function inputs, outputs, and UI behavior. Use a pattern only if the identified design problem justifies it. Do not add new features or dependencies. Show the files you plan to edit before making changes.
 ```
 
-**Problem → pattern → benefit:**
+The assistant's answer, pasted unedited:
 
-**What I rejected from the agent's patch, and why:**
+```text
+1. Refactoring plan
+The main design problem is duplicated availability validation in src/booking.ts. Both canBook() and getBookingIssue() independently check intervals, duration, blocked status, and overlapping bookings.
+
+I recommend a minimal refactor using a single shared validation function, rather than introducing a Strategy, Factory, or other design pattern. This keeps the logic pure and avoids unnecessary abstraction.
+
+Files planned for modification
+File
+
+Planned action
+
+src/booking.ts
+
+Refactor the duplicated validation into one shared implementation
+
+src/booking.test.ts
+
+Keep existing tests unchanged and use them to check for regressions
+
+src/App.tsx
+
+No changes
+
+package.json
+
+No changes
+
+AGENTS.md
+
+No changes
+
+The existing public functions will remain available with the same inputs and outputs. The refactor will preserve the current UI behavior, including the existing endpoint-touching rule, without adding features or dependencies.
+```
+
+**Problem → pattern → benefit:** The confirmed R2 problem is that `fmtTime(1440)` wraps a valid end-of-day boundary to `00:00`. No new pattern is justified: simplify the existing pure formatter by removing the modulo, preserving other times and displaying `24:00` correctly.
+
+**What I rejected from the agent's patch, and why:** The AI proposed refactoring duplicate validation in `booking.ts`, but that does not address R2's failing test and would enlarge this mitigation. I am changing only `project/src/lib/time.ts`; `booking.ts`, `App.tsx`, tests, and dependencies remain as they were after Part 7.
 
 The diff I approved (`git diff`):
 
 ```text
-(paste here)
+diff --git a/week-10/app/project/src/lib/time.ts b/week-10/app/project/src/lib/time.ts
+index b29ef3d..cb947cc 100644
+--- a/week-10/app/project/src/lib/time.ts
++++ b/week-10/app/project/src/lib/time.ts
+@@ -1,7 +1,7 @@
+ /** Convert minutes-from-midnight to "HH:MM" (24h). */
+ export function fmtTime(min: number): string {
+   const clamped = Math.max(0, Math.min(1440, Math.round(min)));
+-  const h = Math.floor(clamped / 60) % 24;
++  const h = Math.floor(clamped / 60);
+   const m = clamped % 60;
+   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+ }
 ```
 
 ### 8.3 The residual risk
 
 | ID | L before | I before | Score before | L after | I after | Score after | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | |
-| | | | | | | | |
+| R1 | 3 | 3 | 9 | 1 | 3 | 3 | The approved `AGENTS.md` diff removes `netlify deploy --prod` and forbids external publishing; the earlier checker reported C5 PASS. A human could still deploy outside this playbook. |
+| R2 | 3 | 2 | 6 | 1 | 2 | 2 | The R2 test failed before the one-line formatter change, then the full 24-test suite and TypeScript/Vite build passed. Another formatter regression remains possible. |
 
 ### 8.4 The final run
 
 The real output of the **full** suite after both mitigations. Every test must pass.
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-10/app/project
+
+ ✓ src/booking.test.ts (24 tests) 6ms
+
+ Test Files  1 passed (1)
+      Tests  24 passed (24)
+   Start at  23:52:13
+   Duration  635ms (transform 55ms, setup 0ms, collect 64ms, tests 6ms, environment 0ms, prepare 185ms)
+```
+
+Build verification (`npm --prefix project run build` from `app/`):
+
+```text
+
+> smart-campus-room-availability@1.0.0 build
+> tsc -b && vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 39 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.93 kB │ gzip:  0.47 kB
+dist/assets/index-DRAPpyg3.css    8.03 kB │ gzip:  2.45 kB
+dist/assets/index-Dt1OUJaz.js   152.11 kB │ gzip: 48.95 kB
+✓ built in 757ms
 ```
 
 ---

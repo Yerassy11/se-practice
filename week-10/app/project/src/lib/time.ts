@@ -1,7 +1,7 @@
 /** Convert minutes-from-midnight to "HH:MM" (24h). */
 export function fmtTime(min: number): string {
   const clamped = Math.max(0, Math.min(1440, Math.round(min)));
-  const h = Math.floor(clamped / 60) % 24;
+  const h = Math.floor(clamped / 60);
   const m = clamped % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
