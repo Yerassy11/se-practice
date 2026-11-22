@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { canBook, type Booking } from "./booking";
+import { fmtTime } from "./lib/time";
+
+it("R2 AC6: displays an accepted end-of-day boundary as 24:00", () => {
+  expect(canBook({ start: 1380, end: 1440, now: 1200, blocked: false, bookings: [] })).toBe(true);
+  expect(fmtTime(1440)).toBe("24:00");
+});
 
 it("BUG-A: allows a 30-minute request touching two bookings at both endpoints (AC4)", () => {
   const bookings: Booking[] = [

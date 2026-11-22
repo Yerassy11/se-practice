@@ -608,23 +608,79 @@ index b786d88..6d6a8fb 100644
 
 ### 7.1 The regression test fails before the mitigation
 
-The risk it covers: **R?**. The real run, with the new test failing:
+The risk it covers: **R2**. The real run of `npx vitest run` in `app/project/`, after adding `R2 AC6` and before any source change:
 
 ```text
-(paste here)
+
+ RUN  v3.2.4 C:/Users/Acer/Desktop/SE/week-10/app/project
+
+ ❯ src/booking.test.ts (24 tests | 1 failed) 15ms
+   × R2 AC6: displays an accepted end-of-day boundary as 24:00 10ms
+     → expected '00:00' to be '24:00' // Object.is equality
+   ✓ BUG-A: allows a 30-minute request touching two bookings at both endpoints (AC4) 0ms
+   ✓ BUG-B: an available non-touching request leaves booking data unchanged (AC5) 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: rejects a start before minute zero independently of the current time 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a request starting one minute after now 0ms
+   ✓ canBook — AC1: valid interval and future start > AC1: accepts a one-minute interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T02: rejects a request that starts exactly now 0ms
+   ✓ canBook — AC1: valid interval and future start > T03: rejects zero-duration interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T04: rejects reversed interval 0ms
+   ✓ canBook — AC1: valid interval and future start > T05: rejects an end time after minute 1440 0ms
+   ✓ canBook — AC1: valid interval and future start > X1: accepts an interval ending exactly at minute 1440 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T06: accepts exactly 120 minutes 0ms
+   ✓ canBook — AC2: maximum duration is 120 minutes > T07: rejects 121 minutes 0ms
+   ✓ canBook — AC3: blocked rooms > T13: rejects an otherwise available request when room is blocked 0ms
+   ✓ canBook — AC4: overlap detection > T01: accepts touching after an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T08: accepts touching before an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T09: rejects partial overlap 0ms
+   ✓ canBook — AC4: overlap detection > T10: rejects a request containing an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T11: rejects a request fully inside an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T12: rejects an interval identical to an existing booking 0ms
+   ✓ canBook — AC4: overlap detection > T14: accepts the request when there are no existing bookings 0ms
+   ✓ canBook — AC4: overlap detection > X2: accepts an interval touching two bookings at both endpoints 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > AC5: returns true and leaves booking data unchanged for an available request 0ms
+   ✓ canBook — AC5: Boolean result and no input mutation > AC5: leaves booking data unchanged when the request is rejected 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/booking.test.ts > R2 AC6: displays an accepted end-of-day boundary as 24:00
+AssertionError: expected '00:00' to be '24:00' // Object.is equality
+
+Expected: "24:00"
+Received: "00:00"
+
+ ❯ src/booking.test.ts:7:25
+      5| it("R2 AC6: displays an accepted end-of-day boundary as 24:00", () => {
+      6|   expect(canBook({ start: 1380, end: 1440, now: 1200, blocked: false, …
+      7|   expect(fmtTime(1440)).toBe("24:00");
+       |                         ^
+      8| });
+      9| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 23 passed (24)
+   Start at  23:42:24
+   Duration  678ms (transform 59ms, setup 0ms, collect 64ms, tests 15ms, environment 0ms, prepare 197ms)
 ```
 
 ### 7.2 The manual UI check
 
 | View | Width | What I checked | Result | Screenshot |
 | --- | --- | --- | --- | --- |
-| Desktop | | | | `evidence/ui-desktop.png` |
-| Mobile | | | | `evidence/ui-mobile.png` |
+| Desktop | 1280 px viewport | Opened the local Vite page, submitted the default 10:00–11:00 interval while current time was 23:47, and inspected the full-page screenshot. The form, timeline, room list, and “Check your input” reason are readable without overlap. | pass for this invalid-time scenario; end-of-day formatting remains R2 | `evidence/ui-desktop.png` |
+| Mobile | 375 px portrait viewport | Repeated the same submitted state at 375 px. Inputs stack vertically; the warning and reason are readable, the room selector remains available below the main panel, and measured `scrollWidth=375`, so there is no horizontal overflow. | pass for this invalid-time scenario; end-of-day formatting remains R2 | `evidence/ui-mobile.png` |
 
 ### 7.3 Tests and checks I did not run
 
 <!-- Name each one and why. "None" only if it is true. -->
--
+- A green Vitest run was not possible in Part 7: the new R2 regression test is intentionally failing until the source is fixed in Part 8.
+- The build was not rerun after adding the test; the baseline build had passed, and a final build belongs after mitigation.
+- `npm run lint` was not run again because the source package has no `lint` script or linter.
+- No integration or CI check ran: the repository has only unit tests for `canBook` and no CI workflow.
+- The manual UI check exercised invalid-time feedback only; Available/Unavailable feedback and a 24:00 input were not exercised in the browser. The R2 boundary was verified directly in the failing unit test.
 
 ---
 
