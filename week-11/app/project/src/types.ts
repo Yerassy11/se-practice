@@ -17,6 +17,14 @@ export interface Room {
 
 export type Decision = "available" | "unavailable" | "invalid";
 
+export type AvailabilityReasonCode =
+  | "available"
+  | "invalid_time"
+  | "past_time"
+  | "too_long"
+  | "room_blocked"
+  | "overlap";
+
 export interface CheckInput {
   room: Room;
   currentTimeMin: number;
@@ -29,4 +37,22 @@ export interface CheckResult {
   reason: string;
   /** Conflict details when unavailable due to overlap (AC4). */
   conflict?: Booking;
+}
+
+export interface ExplanationInput {
+  roomLabel: string;
+  start: string;
+  end: string;
+  isAvailable: boolean;
+  reasonCode: AvailabilityReasonCode;
+}
+
+export type ExplanationAdapter = (input: ExplanationInput) => Promise<unknown> | unknown;
+
+export type ExplanationStatus = "success" | "fallback" | "rejected";
+
+export interface ExplanationResult {
+  status: ExplanationStatus;
+  explanation?: string;
+  message?: string;
 }

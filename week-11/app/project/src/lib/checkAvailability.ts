@@ -1,6 +1,28 @@
-import type { CheckInput, CheckResult } from "../types";
+import type { AvailabilityReasonCode, CheckInput, CheckResult } from "../types";
 import { getBookingIssue } from "../booking";
 import { fmtTime } from "./time";
+
+/** Explain the existing booking rules without duplicating their conditions. */
+export function availabilityReason(input: CheckInput): AvailabilityReasonCode {
+  const { room, currentTimeMin, startMin, endMin } = input;
+  if (!Number.isFinite(currentTimeMin)) return "invalid_time";
+  const issue = getBookingIssue({
+    start: startMin,
+    end: endMin,
+    now: currentTimeMin,
+    blocked: room.blocked,
+    bookings: room.bookings,
+  });
+  if (!issue) return "available";
+  const reasons = {
+    interval: "invalid_time",
+    past: "past_time",
+    duration: "too_long",
+    blocked: "room_blocked",
+    overlap: "overlap",
+  } as const;
+  return reasons[issue.kind];
+}
 
 /**
  * Pure availability check implementing AC1–AC5.

@@ -1,13 +1,16 @@
-import { useMemo, useState } from "react";
-import type { CheckResult, Room } from "./types";
+import { useMemo, useRef, useState } from "react";
+import type { CheckResult, ExplanationInput, ExplanationResult, Room } from "./types";
 import { SAMPLE_ROOMS } from "./data/rooms";
-import { checkAvailability } from "./lib/checkAvailability";
+import { availabilityReason, checkAvailability } from "./lib/checkAvailability";
 import { canBook } from "./booking";
 import { fmtTime, nowHHMM, parseTime } from "./lib/time";
 import { RoomSelector } from "./components/RoomSelector";
 import { BookingForm } from "./components/BookingForm";
 import { RoomTimeline } from "./components/RoomTimeline";
 import { DecisionPanel } from "./components/DecisionPanel";
+import { ExplanationPanel } from "./components/ExplanationPanel";
+import { explainAvailability } from "./explain";
+import { createMockExplanationAdapter } from "./mockExplanationAdapter";
 
 function App() {
   const [selectedId, setSelectedId] = useState(SAMPLE_ROOMS[0].id);
@@ -16,6 +19,11 @@ function App() {
   const [endTime, setEndTime] = useState("11:00");
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<CheckResult | null>(null);
+  const [explanationInput, setExplanationInput] = useState<ExplanationInput | null>(null);
+  const [explanation, setExplanation] = useState<ExplanationResult | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [simulateFailure, setSimulateFailure] = useState(false);
+  const explanationAttempt = useRef(0);
 
   const room: Room =
     SAMPLE_ROOMS.find((r) => r.id === selectedId) ?? SAMPLE_ROOMS[0];
@@ -28,21 +36,26 @@ function App() {
   }, [startTime, endTime]);
 
   const clearResult = () => {
+    explanationAttempt.current += 1;
     setResult(null);
     setSubmitted(false);
+    setExplanationInput(null);
+    setExplanation(null);
+    setIsExplaining(false);
   };
 
   const handleSubmit = () => {
     const current = parseTime(currentTime);
     const start = parseTime(startTime);
     const end = parseTime(endTime);
-    const isAvailable = canBook({
+    const request = {
       start,
       end,
       now: current,
       blocked: room.blocked,
       bookings: room.bookings,
-    });
+    };
+    const isAvailable = canBook(request);
     const res = checkAvailability({
       room,
       currentTimeMin: current,
@@ -57,6 +70,42 @@ function App() {
         : res.decision === "invalid" ? "invalid" : "unavailable",
     });
     setSubmitted(true);
+    explanationAttempt.current += 1;
+    setExplanation(null);
+    setIsExplaining(false);
+    setExplanationInput({
+      roomLabel: room.name,
+      start: startTime,
+      end: endTime,
+      isAvailable,
+      reasonCode: availabilityReason({
+        room,
+        currentTimeMin: current,
+        startMin: start,
+        endMin: end,
+      }),
+    });
+  };
+
+  const handleExplain = async () => {
+    if (!submitted || !explanationInput) return;
+    const attempt = ++explanationAttempt.current;
+    setExplanation(null);
+    setIsExplaining(true);
+    const next = await explainAvailability(
+      explanationInput,
+      createMockExplanationAdapter(simulateFailure),
+    );
+    if (attempt !== explanationAttempt.current) return;
+    setExplanation(next);
+    setIsExplaining(false);
+  };
+
+  const handleSimulateFailure = (value: boolean) => {
+    explanationAttempt.current += 1;
+    setSimulateFailure(value);
+    setExplanation(null);
+    setIsExplaining(false);
   };
 
   const handleReset = () => {
@@ -138,6 +187,15 @@ function App() {
           </div>
 
           <DecisionPanel result={result} submitted={submitted} />
+
+          <ExplanationPanel
+            result={explanation}
+            canExplain={submitted && explanationInput !== null}
+            isExplaining={isExplaining}
+            simulateFailure={simulateFailure}
+            onExplain={handleExplain}
+            onSimulateFailure={handleSimulateFailure}
+          />
 
           {room.bookings.length > 0 && (
             <ul className="booking-list">

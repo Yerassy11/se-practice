@@ -249,6 +249,14 @@ body {
 }
 .btn-primary:hover { background: var(--primary-hover); }
 
+.btn-secondary {
+  background: var(--surface);
+  color: var(--primary-hover);
+  border-color: var(--primary-tint-border);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--primary-tint); }
+.btn:disabled { cursor: not-allowed; opacity: 0.55; }
+
 .btn-ghost {
   background: transparent;
   color: var(--text-muted);
@@ -454,6 +462,78 @@ body {
   margin: 12px 0 0;
   font-size: 0.78rem;
   color: var(--text-faint);
+}
+
+/* ---------- Generated explanation ---------- */
+.explanation-panel {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.explanation-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.explanation-eyebrow {
+  margin: 0 0 2px;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.explanation-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.generated-tag {
+  padding: 4px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.explanation-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.failure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.failure-toggle input { accent-color: var(--primary); }
+
+.explanation-copy {
+  margin: 14px 0 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.explanation-fallback { color: var(--text-muted); }
+.explanation-error {
+  margin: 12px 0 0;
+  color: var(--bad);
+  font-size: 0.82rem;
 }
 
 /* ---------- Booking list ---------- */
