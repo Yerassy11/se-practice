@@ -1052,16 +1052,57 @@ index 867dcf6..6078398 100644
 
 ### 8.2 The second fix
 
-**Finding:** V?
+**Finding:** V2
 
-**Why it is necessary:**
+**Why it is necessary:** The validator measured `output.trim()`, but returned the untrimmed adapter string. With 300 leading spaces and “Available.” it returned `success` and 310 characters, violating the ≤280 contract. The `V2 F2` test failed before the fix (expected ≤280, observed 310), then passed after the one-line fix; the full suite passed 38/38.
 
-**What I rejected from the assistant's proposal, and why:**
+**What I rejected from the assistant's proposal, and why:** I did not refactor all normalization and adapter interfaces as suggested in the review. The validation already trims before checking; returning that same trimmed string fixes the defect without changing the booking rules or mock adapter.
+
+Real pre-fix FAIL:
+
+```text
+ RUN  v4.1.12 C:/Users/Acer/Desktop/SE/week-11/app/project
+
+ ❯ src/explain.test.ts (14 tests | 1 failed | 13 skipped) 7ms
+   × V2 F2: returned explanation remains within 280 characters 6ms
+
+ FAIL  src/explain.test.ts > V2 F2: returned explanation remains within 280 characters
+AssertionError: expected 310 to be less than or equal to 280
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 skipped (14)
+```
 
 The diff (`git diff`):
 
-```text
-(paste here)
+```diff
+diff --git a/week-11/app/project/src/explain.test.ts b/week-11/app/project/src/explain.test.ts
+index 34042e3..cea0d5b 100644
+--- a/week-11/app/project/src/explain.test.ts
++++ b/week-11/app/project/src/explain.test.ts
+@@ -132,3 +132,10 @@ test("V1 F2: a false blocked reason alongside overlap falls back", async () => {
+     () => "The room is unavailable because there is overlap and the room is blocked.");
+   expect(result.status).toBe("fallback");
+ });
++
++test("V2 F2: returned explanation remains within 280 characters", async () => {
++  const result = await explainAvailability(availableInput,
++    () => `${" ".repeat(300)}Available.`);
++  expect(result.status).toBe("success");
++  expect(result.explanation?.length).toBeLessThanOrEqual(280);
++});
+diff --git a/week-11/app/project/src/explain.ts b/week-11/app/project/src/explain.ts
+index 6078398..6ede3e6 100644
+--- a/week-11/app/project/src/explain.ts
++++ b/week-11/app/project/src/explain.ts
+@@ -152,7 +152,7 @@ export async function explainAvailability(
+       throw new Error("Explanation output was invalid");
+     }
+
+-    return { status: "success", explanation: output };
++    return { status: "success", explanation: output.trim() };
+   } catch {
+     return {
 ```
 
 ### 8.3 The final run

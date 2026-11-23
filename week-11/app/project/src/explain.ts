@@ -152,7 +152,7 @@ export async function explainAvailability(
       throw new Error("Explanation output was invalid");
     }
 
-    return { status: "success", explanation: output };
+    return { status: "success", explanation: output.trim() };
   } catch {
     return {
       status: "fallback",
