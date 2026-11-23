@@ -46,6 +46,9 @@ export function ExplanationPanel({
         </label>}
       </div>
 
+      {result?.status === "fallback" && (
+        <p className="explanation-error">Fallback explanation (mock adapter unavailable)</p>
+      )}
       {result?.explanation && (
         <p className={`explanation-copy explanation-${result.status}`}>{result.explanation}</p>
       )}

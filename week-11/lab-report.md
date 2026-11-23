@@ -318,15 +318,15 @@ I compared every source-file difference in the Bolt.new ZIP with the local basel
 ### 5.1 Three instructions
 
 ```text
-A: (paste here)
+A: Explain the provided room availability status briefly. Do not decide availability or add facts.
 ```
 
 ```text
-B: (paste here)
+B: Using only roomLabel, start, end, isAvailable and reasonCode, write at most two sentences and 280 characters. State available only if isAvailable is true. Explain the reason without inventing booking times, people or policies.
 ```
 
 ```text
-C: (paste here)
+C: Follow the deterministic isAvailable and reasonCode; never override them. Example: {isAvailable:false, reasonCode:'overlap'} -> 'The room is unavailable because the requested interval overlaps an existing booking.' For any other reason, adapt only the reason, using no invented time or booking details. Respond in one short sentence.
 ```
 
 ### 5.2 The three inputs and the answers
@@ -334,9 +334,398 @@ C: (paste here)
 The same three JSON inputs (`available`, `overlap`, `room_blocked`), sent after each prompt in a fresh
 chat, and the answers, unedited:
 
-```text
-(paste here)
+The following are the raw answers supplied by the student as A, B and C. C includes responses to all three JSON inputs; A and B do not, so the nine-answer comparison remains incomplete.
+
+A:
+
+````text
+Я нашёл предыдущую версию `booking.ts`. В ней уже существуют `BookingInput`, `getBookingIssue()` и `canBook()`. Поэтому **заменять весь файл нельзя**: `getBookingIssue()` может использоваться интерфейсом для отображения подробных ошибок.
+
+## **1. Минимальное изменение&#x20;**`booking.ts`
+
+Сохрани существующие типы и функцию `getBookingIssue()`. Добавь следующий код после неё:
+```typescript
+
+export type ReasonCode =
+  | "available"
+  | "invalid_time"
+  | "past_time"
+  | "too_long"
+  | "room_blocked"
+  | "overlap";
+
+export function availabilityReason(
+  input: BookingInput
+): ReasonCode {
+  const { start, end, now } = input;
+
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    !Number.isInteger(now) ||
+    start < 0 ||
+    end > 1440 ||
+    now < 0 ||
+    now > 1440 ||
+    start >= end
+  ) {
+    return "invalid_time";
+  }
+
+  const issue = getBookingIssue(input);
+
+  if (issue === null) return "available";
+
+  switch (issue.kind) {
+    case "interval": return "invalid_time";
+    case "past": return "past_time";
+    case "duration": return "too_long";
+    case "blocked": return "room_blocked";
+    case "overlap": return "overlap";
+  }
+}
+
 ```
+
+Затем замени **только существующую функцию&#x20;**`canBook()` на:
+```javascript
+
+export function canBook(input: BookingInput): boolean {
+  return availabilityReason(input) === "available";
+}
+
+```
+
+Если в твоей текущей версии `booking.ts` также экспортируется `checkRoom()`, оставь её без изменений.
+
+
+
+Такой подход сохраняет существующий механизм диагностики ошибок и не дублирует основные правила бронирования.
+
+## **2. Дополнительные тесты Vitest**
+
+Добавь в `src/booking.test.ts`, не удаляя старые тесты:
+```javascript
+
+import { describe, it, expect } from "vitest";
+import { availabilityReason, canBook } from "./booking";
+
+describe("availabilityReason", () => {
+  const base = {
+    start: 600,
+    end: 660,
+    now: 500,
+    blocked: false,
+    bookings: [],
+  };
+
+  it("returns available", () => {
+    expect(availabilityReason(base)).toBe("available");
+  });
+
+  it("returns invalid_time", () => {
+    expect(
+      availabilityReason({ ...base, start: 700 })
+    ).toBe("invalid_time");
+  });
+
+  it("returns past_time", () => {
+    expect(
+      availabilityReason({ ...base, now: 600 })
+    ).toBe("past_time");
+  });
+
+  it("returns too_long", () => {
+    expect(
+      availabilityReason({ ...base, end: 721 })
+    ).toBe("too_long");
+  });
+
+  it("returns room_blocked", () => {
+    expect(
+      availabilityReason({ ...base, blocked: true })
+    ).toBe("room_blocked");
+  });
+
+  it("returns overlap", () => {
+    expect(
+      availabilityReason({
+        ...base,
+        bookings: [{ start: 630, end: 700 }],
+      })
+    ).toBe("overlap");
+  });
+
+  it("allows touching endpoints", () => {
+    const input = {
+      ...base,
+      bookings: [{ start: 540, end: 600 }],
+    };
+    expect(availabilityReason(input)).toBe("available");
+    expect(canBook(input)).toBe(true);
+  });
+
+  it("rejects fractional minutes", () => {
+    expect(
+      availabilityReason({ ...base, start: 600.5 })
+    ).toBe("invalid_time");
+  });
+});
+
+```
+
+## **3. Запуск тестов**
+
+Открой терминал VS Code в папке проекта, где расположен `package.json`, и выполни:
+```arduino
+npx vitest run
+npm run build
+```
+
+**Проверка совместимости:**
+
+|   |
+| - |
+
+Требование
+
+|   |
+| - |
+
+Предлагаемое изменение
+
+|   |
+| - |
+
+Шесть точных `ReasonCode`
+
+|   |
+| - |
+
+Реализовано
+
+|   |
+| - |
+
+Сохранить `BookingInput`
+
+|   |
+| - |
+
+Да
+
+|   |
+| - |
+
+Сохранить `getBookingIssue()`
+
+|   |
+| - |
+
+Да
+
+|   |
+| - |
+
+Сохранить `canBook()`
+
+|   |
+| - |
+
+Да, с делегированием
+
+|   |
+| - |
+
+AC1–AC5
+
+|   |
+| - |
+
+Логика сохранена для допустимых целочисленных входов
+
+|   |
+| - |
+
+AC6, интерфейс
+
+|   |
+| - |
+
+Не изменяется
+
+|   |
+| - |
+
+Touching endpoints
+
+|   |
+| - |
+
+Разрешены
+
+|   |
+| - |
+
+Старые Vitest-тесты
+
+|   |
+| - |
+
+Требуют запуска
+
+**Статус:** код подготовлен, но тесты не запускались. Доступны ранее предоставленные исходники, однако полного исполняемого проекта с зависимостями в рабочей среде нет, поэтому утверждать, что все тесты прошли, нельзя.
+
+
+
+Ещё одна важная деталь: новая проверка `Number.isInteger()` и диапазона `now` строже прежней. Это соответствует указанному контракту, но может изменить результат для некорректных числовых значений. Для окончательного подтверждения F1–F5 и AC1–AC6 нужен реальный запуск всех существующих тестов.
+````
+
+B:
+
+````text
+The pseudocode is suitable for integration into App.tsx. The key requirement is to keep booking decisions deterministic and use the mock adapter only to generate explanatory text.\
+\
+Without the actual App.tsx, the following is an integration pattern rather than an exact patch.\
+\
+1\. State and request tracking\
+const [explanation, setExplanation] = useState("");\
+const [explanationLoading, setExplanationLoading] = useState(false);\
+const [forceMockError, setForceMockError] = useState(false);\
+\
+const requestSequence = useRef(0);\
+\
+2\. Development-only fallback switch\
+{import.meta.env.DEV && (\
+&#x20; \<label>\
+&#x20;   \<input\
+&#x20;     type="checkbox"\
+&#x20;     checked={forceMockError}\
+&#x20;     onChange={(e) => setForceMockError(e.target.checked)}\
+&#x20;   />\
+&#x20;   Simulate explanation failure (dev only)\
+&#x20; \</label>\
+)}\
+\
+Use the existing mockAdapter by default. When the switch is enabled, substitute an adapter that rejects with an Error.\
+\
+3\. Generate the explanation independently\
+The request handler should follow this pattern:\
+\
+async function generateExplanation() {\
+&#x20; const sequence = ++requestSequence.current;\
+\
+&#x20; setExplanation("");\
+&#x20; setExplanationLoading(true);\
+\
+&#x20; const reason = availabilityReason(requestInMinutes);\
+&#x20; const isAvailable = canBook(requestInMinutes);\
+\
+&#x20; const input = {\
+&#x20;   roomLabel: currentRoom.name,\
+&#x20;   start: startHHMM,\
+&#x20;   end: endHHMM,\
+&#x20;   isAvailable,\
+&#x20;   reasonCode: reason,\
+&#x20; };\
+\
+&#x20; const adapter =\
+&#x20;   import.meta.env.DEV && forceMockError\
+&#x20;     ? async () => {\
+&#x20;         throw new Error("Simulated mock failure");\
+&#x20;       }\
+&#x20;     : mockAdapter;\
+\
+&#x20; try {\
+&#x20;   const result = await explainAvailability(input, adapter, 700);\
+\
+&#x20;   if (sequence !== requestSequence.current) return;\
+\
+&#x20;   setExplanation(result.explanation);\
+&#x20; } catch {\
+&#x20;   if (sequence !== requestSequence.current) return;\
+\
+&#x20;   setExplanation("Explanation unavailable.");\
+&#x20; } finally {\
+&#x20;   if (sequence === requestSequence.current) {\
+&#x20;     setExplanationLoading(false);\
+&#x20;   }\
+}\
+\
+The rejecting adapter's exact function signature may need adjustment to match your existing adapter type.\
+\
+4\. Reset and invalidate stale requests\
+useEffect(() => {\
+&#x20; requestSequence.current += 1;\
+&#x20; setExplanation("");\
+&#x20; setExplanationLoading(false);\
+}, [\
+&#x20; currentRoom.id,\
+&#x20; startHHMM,\
+&#x20; endHHMM,\
+&#x20; isAvailable,\
+&#x20; forceMockError,\
+]);\
+\
+Here, isAvailable must be derived from canBook, not stored or calculated from the explanation.\
+\
+If blocked, bookings, or now can change independently, include the corresponding decision inputs in the invalidation dependencies as well.\
+\
+5\. Render the result separately\
+\<div>\
+&#x20; \<strong>\
+&#x20;   {isAvailable ? "Available" : "Unavailable"}\
+&#x20; \</strong>\
+\
+&#x20; \<section>\
+&#x20;   \<h3>\
+&#x20;     Generated explanation (mock) — not a booking decision\
+&#x20;   \</h3>\
+\
+&#x20;   {explanationLoading\
+&#x20;     ? "Generating explanation..."\
+&#x20;     : explanation}\
+&#x20; \</section>\
+\</div>\
+\
+Acceptance checklist\
+\
+canBook() exclusively determines Available/Unavailable.\
+\
+availabilityReason() supplies the reason code.\
+\
+Mock adapter cannot change the booking decision.\
+\
+Development-only switch triggers an adapter error.\
+\
+Fallback explanation appears when the mock fails.\
+\
+Explanations reset when relevant inputs change.\
+\
+Stale asynchronous responses are ignored.\
+\
+No API calls, credentials, or additional dependencies.\
+Important: The sequence counter protects against stale responses, but the invalidation effect must cover every input that can change the request or its decision.\
+\
+Paste your actual src/App.tsx, explainAvailability implementation, and mock adapter definitions. I can then provide an exact minimal patch that preserves your existing UI and AC1–AC6 behavior.\
+````
+
+C:
+
+````text
+The room is unavailable because the requested interval overlaps an existing booking.
+```json
+{"roomLabel":"Study Room A","start":"11:00","end":"12:00","isAvailable":true,"reasonCode":"available"}
+{"roomLabel":"Study Room A","start":"10:30","end":"11:30","isAvailable":false,"reasonCode":"overlap"}
+{"roomLabel":"Study Room A","start":"11:00","end":"12:00","isAvailable":false,"reasonCode":"room_blocked"}
+```
+
+1. Study Room A is available for the requested time interval.
+2. Study Room A is unavailable because the requested interval overlaps an existing booking.
+3. Study Room A is unavailable because the room is blocked.
+
+Как вам разговор? Пригодился?
+````
 
 ### 5.3 The comparison
 
@@ -365,31 +754,42 @@ chat, and the answers, unedited:
 
 | ID | Case | Expected | Observed | Verdict | How |
 | --- | --- | --- | --- | --- | --- |
-| E1 | available | | | | |
-| E2 | overlap | | | | |
-| E3 | blocked room | | | | |
-| E4 | invalid time | | | | |
-| E5 | past time | | | | |
-| E6 | empty input | | | | |
-| E7 | long input | | | | |
-| E8 | timeout | | | | |
-| E9 | simulated API failure | | | | |
-| UI | the UI never changes the deterministic decision | | | | |
+| E1 | available | 11:00–12:00 at 09:00 touches a 10:00–11:00 booking; available explanation | `canBook=true`, `reasonCode=available`, success text says Available; bookings unchanged | pass | Vitest: `E1: 11–12 touches a 10–11 booking and stays available` |
+| E2 | overlap | 10:30–11:30 overlaps; unavailable explanation names overlap | `canBook=false`, `reasonCode=overlap`, success text says Unavailable and overlap | pass | Vitest: `E2: 10:30–11:30 overlaps a 10–11 booking` |
+| E3 | blocked room | `room_blocked`, unavailable explanation | `canBook=false`, `reasonCode=room_blocked`, text says blocked and Unavailable | pass | Vitest: `E3: blocked room stays unavailable` |
+| E4 | invalid time | Reversed 12:30–12:00 gives `invalid_time` | `canBook=false`, `reasonCode=invalid_time`, explanation says invalid | pass | Vitest: `E4: reversed 12:30–12:00 gives invalid_time` |
+| E5 | past time | 08:00–08:30 at 09:00 gives `past_time` | `canBook=false`, `reasonCode=past_time`, explanation says invalid | pass | Vitest: `E5: 08:00–08:30 at 09:00 gives past_time` |
+| E6 | empty input | Reject blank room label before adapter call | `status=rejected`; fake adapter was not called | pass | Vitest: `E6: blank room label is rejected before the adapter` |
+| E7 | long input | Reject 500-character room label before adapter call | `status=rejected`; fake adapter was not called | pass | Vitest: `E7: a 500-character room label is rejected before the adapter` |
+| E8 | timeout | Never-settling adapter returns deterministic fallback | `status=fallback` with 10 ms test timeout | pass | Vitest: `E8: a never-settling fake adapter times out to fallback` |
+| E9 | simulated API failure | Throwing adapter returns deterministic fallback | `status=fallback`; no crash | pass | Vitest: `E9: a throwing fake adapter returns fallback` |
+| UI | the UI never changes the deterministic decision | Status and bookings unchanged after success and fallback; changing input clears explanation | Chrome UI check: Available before and after both explanations; booking list text identical; explanation disappeared after changing End | pass | manual: local dev page in headless Chrome; two screenshots below |
 
 ### 6.2 The run after the feature
 
 The real output of `npx vitest run` with `explain.test.ts` in place (before the review fixes):
 
 ```text
-(paste here)
+22:18:13 [vite] warning: `esbuild` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `oxc` instead.
+22:18:13 [vite] warning: `optimizeDeps.esbuildOptions` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `optimizeDeps.rolldownOptions` instead.
+Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored. The following esbuild options were set: `{ jsx: 'automatic', jsxImportSource: undefined }`
+
+ RUN  v4.1.12 C:/Users/Acer/Desktop/SE/week-11/app/project
+
+
+ Test Files  2 passed (2)
+      Tests  36 passed (36)
+   Start at  22:18:13
+   Duration  326ms (transform 126ms, setup 0ms, import 171ms, tests 30ms, environment 0ms)
+
 ```
 
 ### 6.3 Screenshots
 
 | File | What it shows |
 | --- | --- |
-| `evidence/explain-available.png` | |
-| `evidence/explain-fallback.png` | |
+| `evidence/explain-available.png` | Engineering Hall A at 08:00, request 10:00–11:00: Available remains visible after Explain; the separate panel says Generated explanation and displays the mock text. |
+| `evidence/explain-fallback.png` | Same checked request with the dev-only Simulate API failure box checked: Fallback explanation and deterministic fallback text appear; Available and the booking list remain unchanged. |
 
 ---
 
