@@ -82,6 +82,16 @@ function matchesResult(explanation: string, input: ExplanationInput): boolean {
     return false;
   }
 
+  const exclusiveReasons: Partial<Record<AvailabilityReasonCode, RegExp>> = {
+    past_time: /\bpast\b/i,
+    too_long: /\btoo long\b|\bmaximum allowed length\b/i,
+    room_blocked: /\bblocked\b/i,
+    overlap: /\boverlaps?\b|\bconflict\b/i,
+  };
+  for (const [reason, marker] of Object.entries(exclusiveReasons)) {
+    if (reason !== input.reasonCode && marker.test(explanation)) return false;
+  }
+
   const reasonPattern: Record<AvailabilityReasonCode, RegExp> = {
     available: /\bavailable\b/i,
     invalid_time: /\b(time|interval|valid|validate)\b/i,

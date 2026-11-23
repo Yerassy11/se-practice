@@ -15,8 +15,8 @@ grader find your answers by them. You can add rows to any table, but never remov
 | --- | --- |
 | Assistant I built the feature with (tool) | ChatGPT |
 | Its exact model (with its version, or `not displayed`) | Astra-6 |
-| Assistant I reviewed with (tool) |  |
-| Its exact model (with its version, or `not displayed`) | |
+| Assistant I reviewed with (tool) | ChatGPT (preliminary); Codex subagent (full-context, read-only) |
+| Its exact model (with its version, or `not displayed`) | GPT-6 (as stated in the supplied response); gpt-6.2-astra |
 | Starting point (`week-10` or `week-08`) |week-10 |
 | Baseline commit — the checkpoint of Part 0 | 98f5d9e |
 | Where I ran the tests (Bolt terminal / my computer / Codespace) | my computer |
@@ -800,21 +800,165 @@ Both esbuild and oxc options were set. oxc options will be used and esbuild opti
 Where it ran, how you made sure it could not edit, and what you gave it (the diff, README,
 `AGENTS.md`, the criteria):
 
-<!-- Write below this line -->
+The first reviewer ran in a separate ordinary ChatGPT chat with no repository write access and was told not to edit. Its own response says it had `AGENTS.md` and Practice 11 reference material, but **not** the actual diff or current source; its findings were hypotheses. I then generated `git diff 98f5d9e -- week-11/app` from the root and saved the complete 2,043-line output at `.tmp/review-diff.patch`. A second read-only Codex reviewer (`gpt-6.2-astra`) inspected that diff, `week-11/README.md`, `week-11/app/AGENTS.md`, the current `explain.ts`, `booking.ts`, `App.tsx`, both test files, and AC1–AC6/F1–F5. It was explicitly instructed not to edit; `git status --short` before and after its run contained the same report/submission changes and no source change. I independently reproduced its three findings with temporary tests, then removed those tests from `src`. The first review's missing context remains disclosed below.
 
 ### 7.2 The review prompt and the answer
 
 What you sent, exactly (the deck's prompt):
 
 ```text
-(paste here)
+Act as a read-only agentic code reviewer. Inspect the proposed diff in context, repository instructions, and tests. Review correctness, security, maintainability, and performance. For each issue, provide severity, affected file, evidence, reproduction or verification method, and a minimal recommendation. Do not edit files. Clearly distinguish confirmed findings from hypotheses.
 ```
 
 The reviewer's answer, pasted unedited:
 
 ```text
-(paste here)
+confirmed findings from hypotheses.
+Read-Only Agentic Code Review
+Project: Smart Campus Room Availability Checker
+Scope: Correctness, Security, Maintainability, Performance
+Reviewer: GPT-6
+Mode: Read-only — no files modified
+
+1. Review scope and limitations
+I located the project's AGENTS.md, the Practice 11 requirements, and reference implementations of explain.ts and explain.test.ts.
+
+However, the actual proposed Git diff and current repository source files were not available. The reference implementation is not evidence that the same code exists in your working branch. Therefore, I cannot confirm defects in the submitted implementation or report executed test results.
+
+The repository contract requires preserving AC1–AC6, keeping canBook authoritative, and running tests before acceptance. Practice 11 additionally requires input/output validation, safe fallbacks, and no client-side API credentials.
+AGENTS.md
+Practice_11_Handout.docx
+
+2. Preliminary findings
+These are review hypotheses based on the available reference implementation. They require verification against the actual diff.
+
+Finding 1 — Explanation validation may accept incorrect reasons
+
+Medium
+Status: Hypothesis
+Affected file: src/explain.ts
+Category: Correctness / Security
+
+Evidence: The reference validOutput() checks for words such as available or unavailable, but does not fully verify that the explanation matches the supplied reasonCode.
+
+Verification: Pass isAvailable: false, reasonCode: "overlap" with an adapter returning "The room is unavailable because it is blocked." Determine whether the incorrect explanation is accepted.
+
+Minimal recommendation: Validate reason-specific meaning or use the deterministic fallback whenever the reason cannot be verified.
+
+Finding 2 — Old asynchronous explanations may overwrite newer results
+
+Medium
+Status: Hypothesis
+Affected file: src/App.tsx
+Category: Correctness / Maintainability
+
+Evidence: The available integration requirements describe asynchronous explanation generation, but the actual UI implementation is not available to verify stale-response protection.
+
+Verification: Request an explanation, change the room time before the response arrives, and check whether the previous explanation appears for the new request.
+
+Minimal recommendation: Use a request identifier or cancellation mechanism, and discard responses that no longer match the current inputs.
+
+Finding 3 — Timeout may not cancel adapter execution
+
+Low
+Status: Hypothesis
+Affected file: src/explain.ts
+Category: Performance / Resource management
+
+Evidence: The reference implementation uses Promise.race() and setTimeout(). This limits how long the caller waits but does not cancel the underlying adapter operation.
+
+Verification: Run a slow adapter with a short timeout and instrument whether the adapter continues after the fallback is returned.
+
+Minimal recommendation: Support AbortSignal for cancellable adapters. Retain the existing safe fallback mechanism.
+
+3. Test coverage assessment
+The reference tests address E1–E9, including available rooms, overlaps, blocked rooms, invalid inputs, timeouts, and adapter failures. Additional cases check contradictions, invented times, and oversized responses.
+
+The actual project still needs verification of these requirements:
+
+Requirement
+
+Verification needed
+
+AC1–AC4
+
+Existing booking rules remain unchanged
+
+AC5
+
+No modification of booking data
+
+AC6
+
+Clear desktop/mobile feedback
+
+F1
+
+Existing tests remain passing
+
+F2
+
+Explanations agree with decision and reason
+
+F3
+
+Invalid input rejected before adapter invocation
+
+F4
+
+Timeout/error produces safe fallback
+
+F5
+
+Generated explanation visibly labeled
+
+Test execution: Not performed. No runnable repository or installed project dependencies were accessible.
+
+4. Review conclusion
+Acceptance: Not yet verified
+
+Confirmed defects in the actual diff: 0
+
+Potential findings: 3
+
+Unsupported claims about the deployed implementation: None
+
+Files modified: 0
+
+Tests executed: 0
+
+To complete an evidence-backed review, provide the actual proposed diff from your week-11 branch, together with src/booking.ts, src/App.tsx, src/explain.ts, and the existing tests.
+
+You can generate the diff in the project repository with:
+
+git diff --no-ext-diff
+git diff --no-ext-diff --cached
+git status --short
+
+Include newly created, untracked files as well, because ordinary git diff does not show their contents.
+
+With those files, the three hypotheses can be classified as confirmed, plausible, or unsupported, with precise line references and reproducible verification steps suitable for Practice 11 §7.
 ```
+
+I then sent this exact follow-up to a separate read-only Codex reviewer with the actual repository:
+
+```text
+Act as a read-only agentic code reviewer. Do not edit any files or run commands that write files. Project root: C:\Users\Acer\Desktop\SE, branch week-11, baseline 98f5d9e. Inspect `git diff 98f5d9e -- week-11/app` and context: week-11/README.md, week-11/app/AGENTS.md, current app/project/src/explain.ts, booking.ts, App.tsx, booking.test.ts, explain.test.ts, relevant types/adapters/components. Review correctness, security, maintainability, performance against AC1–AC6 and F1–F5. Provide concise findings with severity, file/line, evidence, reproduction/verification method, minimal fix; distinguish confirmed from hypotheses. Note specifically whether explanation can assert a false extra reason and whether timeout cancels adapter work. No edits.
+```
+
+The second reviewer's complete answer:
+
+````text
+Confirmed by source inspection against baseline `98f5d9e`. Paths below are under `week-11/app/project/src/`.
+
+| ID | Severity | File and line | Evidence and verification method | Minimal recommendation |
+|---|---|---|---|---|
+| V1 | High · correctness, F2 | `explain.ts:94` | For `isAvailable: false` and `reasonCode: "overlap"`, an adapter returning “The room is unavailable because of an overlap and the room is blocked.” passes every check. The extra blocked-room claim has no basis in the input. E2 tests the status, but misses a false reason alongside the correct status. | Accept controlled phrases for each reason and fall back for unrecognized text. Add this mixed-reason regression case. |
+| V2 | Medium · correctness | `explain.ts:99`, `explain.ts:145` | Validation trims the output, but success returns the original string. An adapter returning 300 spaces followed by “Available.” passes validation and delivers 310 characters to the caller, exceeding the 280-character limit. | Normalize once and return the same string that passed validation. Test the length of the returned explanation. |
+| V3 | Low · resource use | `explain.ts:131`, `types.ts:50` | The timeout returns a fallback, but the adapter receives no cancellation signal. Verify with a delayed adapter that records completion after the timeout. E8 uses a never-settling promise and checks only the caller’s result. The shipped mock completes immediately. | Pass an `AbortSignal` to adapters and abort on timeout. Keep the deadline for adapters that ignore cancellation. |
+
+The booking module and its tests have no diff from the baseline. The UI displays the generated explanation separately and ignores stale responses after a new check. The current adapter uses local templates and makes no provider call. No files were edited, and this review did not run the suite or verify desktop and mobile rendering.
+````
 
 ### 7.3 The findings, verified
 
@@ -824,16 +968,16 @@ At least **three**; at least **two** `confirmed`. **Category:** `correctness`, `
 
 | ID | Finding (short) | Category | Severity | File | How I verified it | Label | Found by |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| V1 | | | | | | | |
-| V2 | | | | | | | |
-| V3 | | | | | | | |
+| V1 | Output can add a false second reason while mentioning the correct reason. | correctness | high | `app/project/src/explain.ts` | Temporary Vitest test: `reasonCode=overlap`, adapter says “The room is unavailable because there is overlap and the room is blocked.” Expected fallback, received `success`. The first reviewer's blocked-only example fell back, but the mixed claim reproduces the broader defect. | confirmed | both |
+| V2 | Returned explanation can exceed 280 characters despite passing validation. | correctness | medium | `app/project/src/explain.ts` | Temporary Vitest test: adapter returned 300 spaces plus “Available.” Validation trimmed it, returned `success` with the original 310-character string; expected length ≤280. The second reviewer also identified the trim/return mismatch in code. | confirmed | both |
+| V3 | Timeout returns fallback but does not stop adapter work. | performance | low | `app/project/src/explain.ts` | Temporary Vitest test used a 40 ms adapter and 5 ms timeout: fallback returned, then adapter completion flag became true; expected stopped work. `Promise.race` has no adapter cancellation signal. | confirmed | both |
 
 ### 7.4 My own inspection, and the linter
 
 What you checked by hand that the reviewer did not, and which of these findings a linter would have
 caught and which it could not:
 
-<!-- Write below this line -->
+I inspected the actual `booking.ts` and `App.tsx`: the original `canBook` remains authoritative, and the Explain handler uses a stored decision. The first reviewer hypothesized a stale-response bug, but `explanationAttempt` increments on input changes and rejects old responses, so that particular claim was unsupported; the second reviewer reached the same conclusion from source. I also checked the dev-only failure switch and `src` for provider calls or key reads; none were found. Temporary reproduction tests for V1–V3 all failed as described and are saved in `.tmp/review.verify.test.ts`; I removed the failing test from `src` so the committed suite remains green. There is no `lint` script in `package.json`. A linter could catch unused imports or some unsafe patterns, but it cannot establish reason/status agreement (V1), the returned length contract (V2), or adapter cancellation after timeout (V3).
 
 ---
 
@@ -841,16 +985,69 @@ caught and which it could not:
 
 ### 8.1 The first fix
 
-**Finding:** V?
+**Finding:** V1
 
-**Why it is necessary:**
+**Why it is necessary:** With `reasonCode=overlap`, the previous validator accepted an adapter sentence that also falsely claimed the room was blocked. This violates F2 because the generated reason is not supported by the deterministic result. The new `V1 F2` test failed before the fix (expected `fallback`, received `success`) and passed after it; the full suite then passed 37/37.
 
-**What I rejected from the assistant's proposal, and why:**
+**What I rejected from the assistant's proposal, and why:** I did not replace all generated text with a fixed list of exact phrases, as the reviewer suggested; that would unnecessarily discard valid short explanations. I added a focused check for mutually exclusive reason words and left `canBook` unchanged.
+
+Real pre-fix FAIL:
+
+```text
+ RUN  v4.1.12 C:/Users/Acer/Desktop/SE/week-11/app/project
+
+ ❯ src/explain.test.ts (13 tests | 1 failed | 12 skipped) 9ms
+   × V1 F2: a false blocked reason alongside overlap falls back 8ms
+
+ FAIL  src/explain.test.ts > V1 F2: a false blocked reason alongside overlap falls back
+AssertionError: expected 'success' to be 'fallback' // Object.is equality
+
+Expected: "fallback"
+Received: "success"
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 skipped (13)
+```
 
 The diff (`git diff`):
 
-```text
-(paste here)
+```diff
+diff --git a/week-11/app/project/src/explain.test.ts b/week-11/app/project/src/explain.test.ts
+index 2e35692..34042e3 100644
+--- a/week-11/app/project/src/explain.test.ts
++++ b/week-11/app/project/src/explain.test.ts
+@@ -125,3 +125,10 @@ test("E1 F2: an explanation longer than 280 characters is rejected", async () =>
+     () => `Available. ${"Extra text ".repeat(30)}`);
+   expect(result.status).toBe("fallback");
+ });
++
++test("V1 F2: a false blocked reason alongside overlap falls back", async () => {
++  const input: ExplanationInput = { ...availableInput, isAvailable: false, reasonCode: "overlap" };
++  const result = await explainAvailability(input,
++    () => "The room is unavailable because there is overlap and the room is blocked.");
++  expect(result.status).toBe("fallback");
++});
+diff --git a/week-11/app/project/src/explain.ts b/week-11/app/project/src/explain.ts
+index 867dcf6..6078398 100644
+--- a/week-11/app/project/src/explain.ts
++++ b/week-11/app/project/src/explain.ts
+@@ -82,6 +82,16 @@ function matchesResult(explanation: string, input: ExplanationInput): boolean {
+     return false;
+   }
+
++  const exclusiveReasons: Partial<Record<AvailabilityReasonCode, RegExp>> = {
++    past_time: /\bpast\b/i,
++    too_long: /\btoo long\b|\bmaximum allowed length\b/i,
++    room_blocked: /\bblocked\b/i,
++    overlap: /\boverlaps?\b|\bconflict\b/i,
++  };
++  for (const [reason, marker] of Object.entries(exclusiveReasons)) {
++    if (reason !== input.reasonCode && marker.test(explanation)) return false;
++  }
++
+   const reasonPattern: Record<AvailabilityReasonCode, RegExp> = {
+     available: /\bavailable\b/i,
+     invalid_time: /\b(time|interval|valid|validate)\b/i,
 ```
 
 ### 8.2 The second fix

@@ -125,3 +125,10 @@ test("E1 F2: an explanation longer than 280 characters is rejected", async () =>
     () => `Available. ${"Extra text ".repeat(30)}`);
   expect(result.status).toBe("fallback");
 });
+
+test("V1 F2: a false blocked reason alongside overlap falls back", async () => {
+  const input: ExplanationInput = { ...availableInput, isAvailable: false, reasonCode: "overlap" };
+  const result = await explainAvailability(input,
+    () => "The room is unavailable because there is overlap and the room is blocked.");
+  expect(result.status).toBe("fallback");
+});
