@@ -22,10 +22,10 @@ Use exactly one fictional room with fictional bookings; do not use real names or
 
 ## Commands
 
-- Install: from `app/` run `npm install` and `npm --prefix project install`; run dev/build there and tests from `app/project/`.
-- Dev server: `npm --prefix project run dev`
+- Install: from `app/project/` run `npm install`; run dev, build, and tests there.
+- Dev server: `npm run dev`
 - Tests: `npx vitest run`
-- Build: `npm --prefix project run build`
+- Build: `npm run build`
 
 ## You may
 

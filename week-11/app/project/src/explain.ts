@@ -6,7 +6,11 @@ import type {
 } from "./types";
 import { parseTime } from "./lib/time";
 
+export { createMockExplanationAdapter } from "./mockExplanationAdapter";
+
 export const DEFAULT_EXPLANATION_TIMEOUT_MS = 1200;
+
+export const SYSTEM_INSTRUCTION = "Follow the deterministic isAvailable and reasonCode; never override them. Example: {isAvailable:false, reasonCode:'overlap'} -> 'The room is unavailable because the requested interval overlaps an existing booking.' For any other reason, adapt only the reason, using no invented time or booking details. Respond in one short sentence.";
 
 const REASON_CODES: readonly AvailabilityReasonCode[] = [
   "available",

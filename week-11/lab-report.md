@@ -734,15 +734,15 @@ The room is unavailable because the requested interval overlaps an existing book
 
 | Prompt | Clarity | Consistency | Agrees with the facts | Invented |
 | --- | --- | --- | --- | --- |
-| A | | | | |
-| B | | | | |
-| C | | | | |
+| A | 1 | 1 | no | Unsupported code claims instead of three explanations; no invented booking time identified |
+| B | 1 | 1 | no | Claimed the actual `App.tsx` was unavailable and returned integration advice instead of three explanations |
+| C | 3 | 3 | yes | nothing |
 
 ### 5.4 The one I chose
 
-**Chosen:** A / B / C
+**Chosen:** C
 
-<!-- Why, from the table above. Then confirm it is in explain.ts as SYSTEM_INSTRUCTION. -->
+Only C supplied three concise explanations for the available, overlap, and blocked inputs, each agreeing with the corresponding JSON and adding no booking detail. A and B were off task and did not provide the same three-response set, so this comparison is limited rather than a controlled nine-response experiment. The C instruction is stored verbatim in `src/explain.ts` as `SYSTEM_INSTRUCTION` for a possible future real-model adapter; the local mock does not read it.
 
 ---
 
@@ -1011,6 +1011,13 @@ Received: "success"
 
 The diff (`git diff`):
 
+Behavioral summary of the same change (the literal Git diff below contains only added lines):
+
+```diff
+- Previously: a sentence could state both overlap and a blocked room.
++ Now: conflicting reason words make validation fail and trigger fallback.
+```
+
 ```diff
 diff --git a/week-11/app/project/src/explain.test.ts b/week-11/app/project/src/explain.test.ts
 index 2e35692..34042e3 100644
@@ -1111,16 +1118,27 @@ The real output of the **full** suite after both fixes: the old booking tests an
 together. Every test must pass.
 
 ```text
-(paste here)
+22:44:19 [vite] warning: `esbuild` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `oxc` instead.
+22:44:19 [vite] warning: `optimizeDeps.esbuildOptions` option was specified by "vite:react-babel" plugin. This option is deprecated, please use `optimizeDeps.rolldownOptions` instead.
+Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored. The following esbuild options were set: `{ jsx: 'automatic', jsxImportSource: undefined }`
+
+ RUN  v4.1.12 C:/Users/Acer/Desktop/SE/week-11/app/project
+
+
+ Test Files  2 passed (2)
+      Tests  38 passed (38)
+   Start at  22:44:19
+   Duration  390ms (transform 142ms, setup 0ms, import 193ms, tests 45ms, environment 0ms)
+
 ```
 
 ### 8.4 Ready for demonstration?
 
-**Ready:** yes / no
-
-**What remains unresolved:**
+**Ready:** yes
 
 <!-- Write below this line -->
+
+**What remains unresolved:** V3 remains: the timeout returns a safe fallback but does not cancel a still-running adapter. The shipped mock finishes immediately and has no external work. The A/B/C prompt comparison is incomplete because A and B did not return the same three-input set. After both fixes, the full suite passed 38/38, the build passed, and a browser UI check confirmed that Available and booking data stay unchanged after success and fallback, while editing a field clears the explanation.
 
 ---
 
@@ -1130,7 +1148,7 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
 
 | Check | Why it stays |
 | --- | --- |
-| | |
+| none | The final checker run reported 27 PASS, 0 FAIL, and 0 ERROR. |
 
 ---
 
@@ -1144,4 +1162,4 @@ Use the same IDs as `known_fails` in `submission.yml`. Write `none` if the run i
      through roomLabel', was unsupported: the label comes from a fixed list. E8 failed at first
      because the timeout was never armed; V1 was confirmed by a test that failed before the fix." -->
 
-<!-- Write your reflection below this line -->
+Bolt produced a plan and a project ZIP for the optional explanation feature. I compared its files with the Week 10 checker and kept the original `canBook` and booking tests because the ZIP omitted them and duplicated the decision logic. I used a local mock adapter, then checked normal, invalid, timeout, and throwing-adapter cases. E8 showed that an adapter which never resolves returns a deterministic fallback. In the browser, the Available status and booking list stayed unchanged when an explanation appeared or failed. The review led to V1, where a sentence added a false blocked-room reason, and V2, where leading spaces bypassed the 280-character output limit. I added regression tests and fixed those behaviors separately. Timeout still does not cancel underlying adapter work.
