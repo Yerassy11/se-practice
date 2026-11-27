@@ -156,23 +156,69 @@ Where each topic is in the file (the heading, or the line).
 
 <!-- One problem: the file and lines, and why it makes the code harder to change. Write below this line -->
 
+`project/booking.py` centralizes all booking policies in `can_book`: interval bounds at lines 2–3, the future-start rule at lines 4–5, the 120-minute limit at lines 6–7, blocked status at lines 8–9, and overlap checks at lines 10–12. Changing any policy requires editing the same function. This is a potential maintenance problem if different room types later need independent policy sets; the current code does not demonstrate that requirement. The function is only 13 lines long, and no duplicated implementation was found in this project.
+
 ### 4.2 The pattern I evaluated
 
 <!-- Strategy, Adapter, or another you can name; what it would change for this problem. Write below this line -->
 
+Strategy could move an entire booking policy into an interchangeable callable or implementation, allowing a caller to select different rule sets. In Python this would not require classes, but it would still introduce a policy interface, a selection point, and additional tests. The current project has one fixed set of acceptance criteria, AC1–AC5, and no caller that needs to switch policies. Splitting each condition into a separate strategy would also make the order and combination of checks harder to follow without solving an existing variation problem.
+
 ### 4.3 My decision, before and after
 
-**Decision:** applied / not warranted
+**Decision:** not warranted
 
 <!-- Why, and the structure before and after (functions, modules, or a diagram in a code block). Write below this line -->
+
+Keep the existing function. Its short sequence of early returns makes the rejection rules easy to inspect together. A Strategy refactoring would add indirection and parameters without removing duplication or supporting a current requirement. Even a small extraction is not justified solely by a possible future policy change. Revisit this decision if the project actually gains multiple interchangeable policy sets.
+
+Before and after are identical: `booking.py` exports one `can_book(start, end, now, blocked, existing)` function, and `test_booking.py` imports it directly. No classes, modules, dependencies, signatures, or booking rules were changed.
 
 ### 4.4 The acceptance criteria still hold
 
 The real output of the same checks, run after the decision:
 
 ```text
-(paste here)
+test_119_minutes_allowed (test_booking.BookingTests.test_119_minutes_allowed) ... ok
+test_121_minutes_rejected (test_booking.BookingTests.test_121_minutes_rejected) ... ok
+test_accepted_existing_list_unchanged (test_booking.BookingTests.test_accepted_existing_list_unchanged) ... ok
+test_blocked_room_rejected (test_booking.BookingTests.test_blocked_room_rejected) ... ok
+test_blocked_with_empty_bookings_rejected (test_booking.BookingTests.test_blocked_with_empty_bookings_rejected) ... ok
+test_contains_existing_rejected (test_booking.BookingTests.test_contains_existing_rejected) ... ok
+test_empty_existing_allowed (test_booking.BookingTests.test_empty_existing_allowed) ... ok
+test_end_after_1440_rejected (test_booking.BookingTests.test_end_after_1440_rejected) ... ok
+test_end_at_1440_allowed (test_booking.BookingTests.test_end_at_1440_allowed) ... ok
+test_entirely_inside_rejected (test_booking.BookingTests.test_entirely_inside_rejected) ... ok
+test_exactly_120_minutes_allowed (test_booking.BookingTests.test_exactly_120_minutes_allowed) ... ok
+test_free_gap_among_three_allowed (test_booking.BookingTests.test_free_gap_among_three_allowed) ... ok
+test_identical_interval_rejected (test_booking.BookingTests.test_identical_interval_rejected) ... ok
+test_negative_start_rejected (test_booking.BookingTests.test_negative_start_rejected) ... ok
+test_one_minute_after_now_allowed (test_booking.BookingTests.test_one_minute_after_now_allowed) ... ok
+test_one_minute_duration_allowed (test_booking.BookingTests.test_one_minute_duration_allowed) ... ok
+test_overlap_second_booking_rejected (test_booking.BookingTests.test_overlap_second_booking_rejected) ... ok
+test_partial_overlap_on_start_rejected (test_booking.BookingTests.test_partial_overlap_on_start_rejected) ... ok
+test_partial_overlap_rejected (test_booking.BookingTests.test_partial_overlap_rejected) ... ok
+test_past_start_rejected (test_booking.BookingTests.test_past_start_rejected) ... ok
+test_rejected_existing_list_unchanged (test_booking.BookingTests.test_rejected_existing_list_unchanged) ... ok
+test_return_bool_false (test_booking.BookingTests.test_return_bool_false) ... ok
+test_return_bool_true (test_booking.BookingTests.test_return_bool_true) ... ok
+test_reversed_times_rejected (test_booking.BookingTests.test_reversed_times_rejected) ... ok
+test_start_at_zero_now_zero_rejected (test_booking.BookingTests.test_start_at_zero_now_zero_rejected) ... ok
+test_start_equal_now_rejected (test_booking.BookingTests.test_start_equal_now_rejected) ... ok
+test_start_one_now_zero_allowed (test_booking.BookingTests.test_start_one_now_zero_allowed) ... ok
+test_touch_both_neighbours_allowed (test_booking.BookingTests.test_touch_both_neighbours_allowed) ... ok
+test_touch_existing_start_allowed (test_booking.BookingTests.test_touch_existing_start_allowed) ... ok
+test_touching_end_is_allowed (test_booking.BookingTests.test_touching_end_is_allowed) ... ok
+test_unsorted_existing_second_overlap_rejected (test_booking.BookingTests.test_unsorted_existing_second_overlap_rejected) ... ok
+test_zero_length_rejected (test_booking.BookingTests.test_zero_length_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.001s
+
+OK
 ```
+
+Command: `py -m unittest -v`, run from `sis-05/project/`; exit code 0. All 32 original tests passed, including the interval and future-start checks (AC1), duration checks (AC2), blocked-room checks (AC3), overlap and touching checks (AC4), and Boolean-result and input-integrity checks (AC5).
 
 ---
 
