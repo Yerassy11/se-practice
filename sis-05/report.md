@@ -1,8 +1,8 @@
 # SIS #05 — Report
 
-**Name:**
-**Group:**
-**Date:**
+**Name:** Khudaibergen Yerassyl
+**Group:** Monday 16:00-19:00
+**Date:** 2026-11-27
 
 Fill in every section. **Do not delete, rename or renumber the headings.** The checker and the
 grader find your answers by them. You can add rows to any table, but never remove its header.
@@ -13,13 +13,13 @@ grader find your answers by them. You can add rows to any table, but never remov
 
 | | |
 | --- | --- |
-| Project (name, and what it does in one line) | |
-| Language and stack | |
-| Where it comes from (my own / Smart Campus / other: say what) | |
-| Baseline commit — the project brought in unchanged (§3 of the README) | |
-| Assistant (tool) | |
-| Exact model (with its version, or `not displayed`) | |
-| Where I ran the commands (my computer / Codespace / Bolt terminal / …) | |
+| Project (name, and what it does in one line) | Smart Campus Room Availability — a Python function that checks whether a room is available for a requested time interval. |
+| Language and stack | Python 3; standard library; `unittest` for automated tests. |
+| Where it comes from (my own / Smart Campus / other: say what) | Smart Campus, adapted from Practice 05. |
+| Baseline commit — the project brought in unchanged (§3 of the README) | fab6995 |
+| Assistant (tool) | ChatGPT |
+| Exact model (with its version, or `not displayed`) | `gpt-6-astra` (the model used for this baseline/context update). |
+| Where I ran the commands (my computer / Codespace / Bolt terminal / …) | Local Windows computer, PowerShell through ChatGPT/Codex; working directory: `C:\Users\Acer\Desktop\SE\sis-05\project`. |
 
 ---
 
@@ -31,11 +31,11 @@ Real paths in `project/`.
 
 | Part | Where (paths) and what it does |
 | --- | --- |
-| Entry points | |
-| Modules | |
-| Dependencies (and where they are declared) | |
-| Tests | |
-| Build / run scripts | |
+| Entry points | `project/booking.py` exposes `can_book(start, end, now, blocked, existing)`. It is an importable function; there is no command-line interface or application UI. |
+| Modules | `project/booking.py` checks the requested interval, current time, 120-minute limit, blocked status, and overlaps. `project/README.md` documents the purpose, rules, requirements, and test command. |
+| Dependencies (and where they are declared) | Python standard library only: `project/test_booking.py` imports `unittest` and the local `booking` module. No third-party runtime dependencies or dependency manifest; Python 3 is documented in `project/README.md`. |
+| Tests | `project/test_booking.py` contains 32 `unittest` cases covering boundaries, duration, blocked rooms, overlaps, boolean results, and unchanged booking data. |
+| Build / run scripts | No separate build or run scripts. From `project/`: `py -m unittest -v` runs tests; `py -m py_compile booking.py` checks syntax (not a packaged build). A direct Python import and function call runs an availability check. |
 
 ### 2.2 Commands
 
@@ -44,16 +44,55 @@ At least three. **Kind:** `test`, `lint`, `type`, `build` or `run`. **Exists:** 
 
 | Command | Kind | Exists | Result | Note |
 | --- | --- | --- | --- | --- |
-| | | | | |
-| | | | | |
-| | | | | |
+| `py -m unittest -v` | test | yes | pass | 32 tests, all OK. Full output below. |
+| `py -m py_compile booking.py` | build | yes | pass | Syntax compilation only; exit code 0 and no output. The project has no separate build pipeline. |
+| `py -c "from booking import can_book; print(can_book(660, 720, 540, False, [(600, 660)]))"` | run | yes | pass | Printed `True`: a request from 11:00 to 12:00 can touch an existing booking ending at 11:00. |
+| No configured lint command | lint | no | missing | No lint script or configuration in the project baseline. |
+
+The first sandboxed test attempt returned `No installed Python found!`. The same command was rerun with permission outside the sandbox, where the installed Python was available. The results above refer to the successful local runs. `git diff fab6995 -- sis-05/project` was empty: the source, tests, and README still match the baseline.
 
 ### 2.3 Baseline output
 
 The **real** output of the baseline test run (or of running the program, if there were no tests):
 
 ```text
-(paste here)
+test_119_minutes_allowed (test_booking.BookingTests.test_119_minutes_allowed) ... ok
+test_121_minutes_rejected (test_booking.BookingTests.test_121_minutes_rejected) ... ok
+test_accepted_existing_list_unchanged (test_booking.BookingTests.test_accepted_existing_list_unchanged) ... ok
+test_blocked_room_rejected (test_booking.BookingTests.test_blocked_room_rejected) ... ok
+test_blocked_with_empty_bookings_rejected (test_booking.BookingTests.test_blocked_with_empty_bookings_rejected) ... ok
+test_contains_existing_rejected (test_booking.BookingTests.test_contains_existing_rejected) ... ok
+test_empty_existing_allowed (test_booking.BookingTests.test_empty_existing_allowed) ... ok
+test_end_after_1440_rejected (test_booking.BookingTests.test_end_after_1440_rejected) ... ok
+test_end_at_1440_allowed (test_booking.BookingTests.test_end_at_1440_allowed) ... ok
+test_entirely_inside_rejected (test_booking.BookingTests.test_entirely_inside_rejected) ... ok
+test_exactly_120_minutes_allowed (test_booking.BookingTests.test_exactly_120_minutes_allowed) ... ok
+test_free_gap_among_three_allowed (test_booking.BookingTests.test_free_gap_among_three_allowed) ... ok
+test_identical_interval_rejected (test_booking.BookingTests.test_identical_interval_rejected) ... ok
+test_negative_start_rejected (test_booking.BookingTests.test_negative_start_rejected) ... ok
+test_one_minute_after_now_allowed (test_booking.BookingTests.test_one_minute_after_now_allowed) ... ok
+test_one_minute_duration_allowed (test_booking.BookingTests.test_one_minute_duration_allowed) ... ok
+test_overlap_second_booking_rejected (test_booking.BookingTests.test_overlap_second_booking_rejected) ... ok
+test_partial_overlap_on_start_rejected (test_booking.BookingTests.test_partial_overlap_on_start_rejected) ... ok
+test_partial_overlap_rejected (test_booking.BookingTests.test_partial_overlap_rejected) ... ok
+test_past_start_rejected (test_booking.BookingTests.test_past_start_rejected) ... ok
+test_rejected_existing_list_unchanged (test_booking.BookingTests.test_rejected_existing_list_unchanged) ... ok
+test_return_bool_false (test_booking.BookingTests.test_return_bool_false) ... ok
+test_return_bool_true (test_booking.BookingTests.test_return_bool_true) ... ok
+test_reversed_times_rejected (test_booking.BookingTests.test_reversed_times_rejected) ... ok
+test_start_at_zero_now_zero_rejected (test_booking.BookingTests.test_start_at_zero_now_zero_rejected) ... ok
+test_start_equal_now_rejected (test_booking.BookingTests.test_start_equal_now_rejected) ... ok
+test_start_one_now_zero_allowed (test_booking.BookingTests.test_start_one_now_zero_allowed) ... ok
+test_touch_both_neighbours_allowed (test_booking.BookingTests.test_touch_both_neighbours_allowed) ... ok
+test_touch_existing_start_allowed (test_booking.BookingTests.test_touch_existing_start_allowed) ... ok
+test_touching_end_is_allowed (test_booking.BookingTests.test_touching_end_is_allowed) ... ok
+test_unsorted_existing_second_overlap_rejected (test_booking.BookingTests.test_unsorted_existing_second_overlap_rejected) ... ok
+test_zero_length_rejected (test_booking.BookingTests.test_zero_length_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.001s
+
+OK
 ```
 
 ### 2.4 Weaknesses and missing checks
@@ -63,9 +102,11 @@ it) or `assumption` (not yet shown).
 
 | # | Weakness or missing check | Evidence | Kind |
 | --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
+| 1 | No configured linter or lint command for this project. | `Get-ChildItem -LiteralPath sis-05/project -Force` showed only `booking.py`, `test_booking.py`, and `README.md` before test execution. The README documents tests but no lint command; no lint configuration appears in the repository file inventory. `py_compile` checks syntax, not lint rules or types. | fact |
+| 2 | No GitHub Actions workflow in this checkout to run the booking tests on push. | From the repository root, `Test-Path -LiteralPath '.github/workflows'` returned `False`. This confirms the missing repository workflow; externally configured CI services were not inspected. | fact |
+| 3 | Limited diagnostic output: callers cannot distinguish rejection reasons from the return value. | `project/booking.py:2–12` returns the same `False` for invalid intervals, past starts, excessive duration, blocked rooms, and overlap; line 13 returns `True`. This is a diagnostic limitation of the current Boolean API, not proof of an incorrect booking decision. | fact |
+
+A missing boundary test was not selected: `project/test_booking.py` already covers 120/121 minutes (lines 22/27), start equal to now (line 32), end at/after 1440 (lines 47/52), and touching endpoints (lines 7/112/132).
 
 ### 2.5 Acceptance criteria
 
@@ -73,9 +114,13 @@ Three to five things that must still be true after every change, and how you che
 
 | ID | Must remain true | How I check it (a test, a command, a step) |
 | --- | --- | --- |
-| AC1 | | |
-| AC2 | | |
-| AC3 | | |
+| AC1 | Reject invalid time intervals, intervals outside 0–1440, and starts at or before the current time. | Run `py -m unittest -v`; inspect the zero-length, reversed, negative-start, end-after-1440, past-start, and start-equal-now cases. |
+| AC2 | Allow a duration of exactly 120 minutes and reject longer requests. | `test_exactly_120_minutes_allowed` and `test_121_minutes_rejected`. |
+| AC3 | Reject blocked rooms, including when there are no existing bookings. | `test_blocked_room_rejected` and `test_blocked_with_empty_bookings_rejected`. |
+| AC4 | Reject overlapping bookings while allowing intervals that only touch endpoints. | Overlap tests plus `test_touching_end_is_allowed`, `test_touch_existing_start_allowed`, and `test_touch_both_neighbours_allowed`. |
+| AC5 | Return a boolean without changing or reordering existing booking data. | `test_return_bool_true`, `test_return_bool_false`, `test_accepted_existing_list_unchanged`, and `test_rejected_existing_list_unchanged`. |
+
+AC1–AC5 are the acceptance contract throughout SIS-05. Run the same booking tests after each refactoring or mitigation to verify that these rules still hold.
 
 ---
 
@@ -85,9 +130,9 @@ Three to five things that must still be true after every change, and how you che
 
 | | |
 | --- | --- |
-| File (`project/AGENTS.md` or `project/CLAUDE.md`) | |
-| Created or improved? | |
-| Does the assistant load it by itself? (`yes` / `no, I pasted it` / `not sure, I pasted it`) | |
+| File (`project/AGENTS.md` or `project/CLAUDE.md`) | `project/AGENTS.md` |
+| Created or improved? | Created for SIS-05; the file was absent from the baseline. |
+| Does the assistant load it by itself? (`yes` / `no, I pasted it` / `not sure, I pasted it`) | no, I pasted it |
 
 ### 3.2 What it covers
 
@@ -95,13 +140,13 @@ Where each topic is in the file (the heading, or the line).
 
 | Topic | Where in the file |
 | --- | --- |
-| Purpose | |
-| Architecture | |
-| Setup | |
-| Safe commands | |
-| Coding conventions | |
-| Test expectations | |
-| Forbidden actions | |
+| Purpose | `project/AGENTS.md` → `Purpose` |
+| Architecture | `project/AGENTS.md` → `Architecture` |
+| Setup | `project/AGENTS.md` → `Setup` |
+| Safe commands | `project/AGENTS.md` → `Safe Commands` |
+| Coding conventions | `project/AGENTS.md` → `Coding Conventions` |
+| Test expectations | `project/AGENTS.md` → `Test Expectations` |
+| Forbidden actions | `project/AGENTS.md` → `Forbidden Actions` |
 
 ---
 
