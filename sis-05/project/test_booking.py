@@ -4,6 +4,24 @@ from booking import can_book
 
 class BookingTests(unittest.TestCase):
 
+    def test_R1_time_types_rejected(self):
+        for field in range(3):
+            for value in ("600", None, True, 600.5, float("nan"), float("inf")):
+                args = [600, 660, 540, False, []]
+                args[field] = value
+                with self.subTest(field=field, value=value):
+                    self.assertIs(can_book(*args), False)
+
+    def test_R1_now_outside_day_rejected(self):
+        for now in (-1, 1441):
+            with self.subTest(now=now):
+                self.assertIs(can_book(600, 660, now, False, []), False)
+
+    def test_R1_blocked_must_be_boolean(self):
+        for blocked in (None, 0, 1, "False", [], {}):
+            with self.subTest(blocked=blocked):
+                self.assertIs(can_book(600, 660, 540, blocked, []), False)
+
     def test_touching_end_is_allowed(self):
         # AC4: expected result follows the specification, not code output.
         result = can_book(660, 720, 540, False, [(600, 660)])

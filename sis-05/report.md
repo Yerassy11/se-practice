@@ -230,30 +230,601 @@ How you made sure the assistant could not modify files, and what it was given:
 
 <!-- Write below this line -->
 
+ report  using a separate ChatGPT chat with the contents of `project/booking.py`, `project/test_booking.py`, `project/README.md`, and `project/AGENTS.md`, following the supplied screenshot.GPT-6 Astra is user
+
+
+
+
 What you sent, exactly:
 
 ```text
-(paste here)
+Act as a read-only code reviewer for my Smart Campus Room Availability project.Review correctness, maintainability, security, dependencies, and agent operations.Identify at least seven concrete candidate findings across at least three categories.For each finding provide:
+• Affected file and code evidence
+• Category
+• Impact
+• Reproduction or verification method
+• Minimal recommendation
+Do not modify any files.
+Do not invent test results.
+Do not introduce features outside the current project scope.
+Distinguish confirmed evidence from hypotheses.Project files and AGENTS.md are provided below.
 ```
 
 The answer, pasted unedited:
 
-```text
-(paste here)
+````text
+# **Smart Campus Room Availability — Read-Only Code Review**
+
+## **1. Review scope**
+
+The review covers the implementation, unit tests, project documentation, dependencies, and agent operation policies.
+
+| File              | Review scope                                               |
+| ----------------- | ---------------------------------------------------------- |
+| `booking.py`      | Business logic, input validation, correctness and security |
+| `test_booking.py` | Test coverage and reliability                              |
+| `README.md`       | Documentation, requirements and reproducibility            |
+| `AGENTS.md`       | Agent instructions, operational safety and constraints     |
+
+The review preserves the existing `can_book` signature, acceptance criteria AC1–AC5, and the read-only architecture.
+
+**Review approach:** Static code analysis. Confirmed findings are supported by the supplied source code. Hypotheses describe potential problems whose relevance depends on the intended input contract or execution environment.
+
+## **2. Summary of candidate findings**
+
+| ID  | Finding                                        | Category         | Severity | Status             |
+| --- | ---------------------------------------------- | ---------------- | -------- | ------------------ |
+| F01 | Invalid input types can cause exceptions       | Correctness      | Medium   | Confirmed behavior |
+| F02 | Current time is not validated                  | Correctness      | Medium   | Confirmed behavior |
+| F03 | NaN can bypass current-time validation         | Security         | Medium   | Confirmed behavior |
+| F04 | Existing booking intervals are not validated   | Correctness      | Medium   | Confirmed behavior |
+| F05 | Blocked status accepts non-Boolean values      | Correctness      | Low      | Confirmed behavior |
+| F06 | Input contract is insufficiently documented    | Maintainability  | Low      | Confirmed          |
+| F07 | Missing tests for malformed inputs             | Testing          | Medium   | Confirmed          |
+| F08 | Duplicated test scenarios                      | Maintainability  | Low      | Confirmed          |
+| F09 | Python version is insufficiently specified     | Dependencies     | Low      | Confirmed          |
+| F10 | Approved commands may create files             | Agent operations | Low      | Conditional risk   |
+| F11 | Agent instructions lack a review-only workflow | Agent operations | Low      | Confirmed          |
+
+Severity is based on potential impact. Confirmed behavior does not necessarily mean a confirmed acceptance-criteria violation, particularly when the input contract is unspecified.
+
+## **3. Detailed findings**
+
+### **F01 — Invalid input types can cause exceptions**
+
+Medium
+
+Correctness · Confirmed through static analysis
+
+**Affected file:** `booking.py`, lines 1–3.
+
+**Code evidence:**
+
 ```
+def can_book(start, end, now, blocked, existing):    if not (0 <= start < end <= 1440):        return False
+```
+
+The function performs numeric comparisons without checking input types.&#x20;
+
+booking.py
+
+
+
+**Impact:** Invalid input can interrupt the availability check instead of returning a Boolean.
+
+**Reproduction method:**
+
+```
+can_book("660", 720, 540, False, [])
+```
+
+Predicted behavior: `TypeError`.
+
+**Minimal recommendation:** Clarify the accepted input types and introduce basic validation if malformed inputs are expected to be rejected.
+
+### **F02 — Current time is not validated**
+
+Medium
+
+Correctness · Confirmed through static analysis
+
+**Affected file:** `booking.py`, lines 2–5.
+
+**Code evidence:**
+
+```
+if not (0 <= start < end <= 1440):    return Falseif start <= now:    return False
+```
+
+The function validates the requested interval but does not validate the range of `now`.&#x20;
+
+booking.py
+
+
+
+**Impact:** An invalid current time can result in an incorrect availability decision.
+
+**Reproduction method:**
+
+```
+can_book(60, 120, -10, False, [])
+```
+
+Predicted result: `True`, despite the negative current time.
+
+**Minimal recommendation:** Validate that `now` belongs to the documented daily time range if the function is responsible for validating all time inputs.
+
+### **F03 — NaN can bypass current-time validation**
+
+Medium
+
+Security / Input validation · Confirmed through static analysis
+
+**Affected file:** `booking.py`, lines 4–5.
+
+**Code evidence:**
+
+```
+if start <= now:    return False
+```
+
+Comparisons against floating-point NaN evaluate to `False` in this case.&#x20;
+
+booking.py
+
+
+
+**Impact:** Invalid numerical data can bypass the current-time restriction. If untrusted input reaches this function, it could produce an incorrect availability decision.
+
+**Reproduction method:**
+
+```
+can_book(600, 660, float("nan"), False, [])
+```
+
+Predicted result: `True`.
+
+**Minimal recommendation:** Reject non-finite numerical values or restrict time parameters to integers if whole-minute precision is the intended contract.
+
+**Limitation:** The source confirms the validation weakness, but external exploitability is hypothetical because no API or user-input integration was provided.
+
+### **F04 — Existing booking intervals are not validated**
+
+Medium
+
+Correctness · Confirmed through static analysis
+
+**Affected file:** `booking.py`, lines 10–13.
+
+**Code evidence:**
+
+```
+for booked_start, booked_end in existing:    if start < booked_end and end > booked_start:        return Falsereturn True
+```
+
+The overlap calculation assumes that every existing booking contains two valid, correctly ordered time values.&#x20;
+
+booking.py
+
+
+
+**Impact:** Malformed booking records may cause exceptions or incorrect availability decisions.
+
+**Reproduction method:**
+
+```
+can_book(600, 660, 540, False, [(700,)])
+```
+
+Predicted behavior: `ValueError` because the booking cannot be unpacked into two values.
+
+Another example:
+
+```
+can_book(600, 660, 540, False, [(650, 610)])
+```
+
+Predicted result: `False`, even though the existing interval is invalid.
+
+**Minimal recommendation:** Document that existing bookings must be validated by the caller, or introduce minimal validation within `can_book` if required by the input contract.
+
+### **F05 — Blocked status accepts non-Boolean values**
+
+Low
+
+Correctness · Confirmed through static analysis
+
+**Affected file:** `booking.py`, lines 8–9.
+
+**Code evidence:**
+
+```
+if blocked:    return False
+```
+
+Python evaluates the truthiness of the supplied value rather than requiring an actual Boolean.&#x20;
+
+booking.py
+
+
+
+**Impact:** Incorrectly formatted blocked status values may produce unexpected results.
+
+**Reproduction method:**
+
+```
+can_book(600, 660, 540, "False", [])
+```
+
+Predicted result: `False`, because a non-empty string is truthy.
+
+```
+can_book(600, 660, 540, None, [])
+```
+
+Predicted result: `True`.
+
+**Minimal recommendation:** Document that `blocked` must be a Boolean and enforce this requirement if inputs are not validated elsewhere.
+
+### **F06 — Input contract is insufficiently documented**
+
+Low
+
+Maintainability · Confirmed
+
+**Affected files:** `booking.py`, line 1; `README.md`, lines 15–20.
+
+**Code evidence:**
+
+```
+def can_book(start, end, now, blocked, existing):
+```
+
+The function has no docstring or type annotations. The README describes the booking rules but does not explicitly define the accepted parameter types or handling of malformed inputs.&#x20;
+
+booking.py
+
+README(2).md
+
+
+
+**Impact:** Developers and AI agents may make different assumptions about valid input, especially regarding fractional minutes, Boolean values and malformed booking records.
+
+**Verification method:** Inspect the function declaration and README parameter documentation.
+
+**Minimal recommendation:** Add a short docstring or README section defining the five existing parameters and their accepted values without changing the function signature.
+
+### **F07 — Missing tests for malformed inputs**
+
+Medium
+
+Testing · Confirmed coverage gap
+
+**Affected file:** `test_booking.py`, lines 7–169.
+
+**Code evidence:**
+
+The existing tests cover valid intervals, overlapping bookings, blocked rooms, duration restrictions, daily boundaries and non-mutation.
+
+For example:
+
+```
+def test_negative_start_rejected(self):    result = can_book(-1, 30, 540, False, [(600, 660)])    self.assertIs(result, False)
+```
+
+However, no test explicitly verifies malformed parameter types, negative `now`, NaN or invalid existing booking structures.&#x20;
+
+test_booking(1).py
+
+
+
+**Impact:** The test suite cannot detect regressions related to these input-validation scenarios.
+
+**Verification method:** Inspect all test methods and compare their input scenarios with F01–F05.
+
+Potential regression inputs include:
+
+```
+can_book(600, 660, -1, False, [])can_book(600, 660, float("nan"), False, [])can_book("600", 660, 540, False, [])can_book(600, 660, 540, False, [(600,)])
+```
+
+**Minimal recommendation:** Establish the expected behavior for malformed inputs and add targeted tests for confirmed requirements.
+
+### **F08 — Duplicated test scenarios**
+
+Low
+
+Maintainability · Confirmed
+
+**Affected file:** `test_booking.py`, lines 7–15 and 147–155.
+
+**Code evidence:**
+
+```
+def test_touching_end_is_allowed(self):    result = can_book(660, 720, 540, False, [(600, 660)])    self.assertIs(result, True)
+```
+
+```
+def test_return_bool_true(self):    result = can_book(660, 720, 540, False, [(600, 660)])    self.assertIs(result, True)
+```
+
+Both tests execute identical inputs and assertions. The same duplication exists between `test_partial_overlap_rejected` and `test_return_bool_false`.&#x20;
+
+test_booking(1).py
+
+test_booking(1).py
+
+
+
+**Impact:** Increases the test count without increasing behavioral coverage and introduces minor maintenance overhead.
+
+**Verification method:** Compare the function arguments and assertions in both pairs of tests.
+
+**Minimal recommendation:** Retain explicit AC4 and AC5 traceability, but consider using distinct scenarios for the Boolean-return tests. Do not remove required acceptance-criteria evidence.
+
+### **F09 — Python version is insufficiently specified**
+
+Low
+
+Dependencies / Reproducibility · Confirmed
+
+**Affected files:** `README.md`, lines 11–13; `AGENTS.md`, lines 11–13.
+
+**Evidence:**
+
+```
+Python 3. No third-party packages are required.
+```
+
+Neither document specifies a minimum supported or verified Python version.&#x20;
+
+README(2).md
+
+AGENTS(1).md
+
+
+
+**Impact:** Developers and agents may use different Python versions, reducing environment reproducibility.
+
+**Verification method:**
+
+```
+py --version
+```
+
+Compare the installed interpreter version with the documented requirements.
+
+**Minimal recommendation:** Document the minimum supported or actually verified Python version.
+
+No third-party dependencies need to be introduced.
+
+### **F10 — Approved commands may create files**
+
+Low
+
+Agent operations · Conditional risk
+
+**Affected file:** `AGENTS.md`, lines 15–18.
+
+**Evidence:**
+
+```
+## Safe Commands
+Run from the project directory:
+- py -m unittest -v
+- py -m py_compile booking.py
+```
+
+The instructions classify both commands as safe. However, `py_compile` normally generates bytecode files, while running unit tests may also generate `__pycache__` files during imports.&#x20;
+
+AGENTS(1).md
+
+
+
+**Impact:** An agent performing a strictly read-only review may unintentionally create or update filesystem artifacts.
+
+**Verification method:** Inspect the commands and their bytecode-generation behavior. In a separately authorized environment, compare filesystem contents before and after execution.
+
+**Minimal recommendation:** Distinguish non-destructive commands from strictly read-only commands. For example, a future read-only test execution could use:
+
+```
+py -B -m unittest -v
+```
+
+The `-B` option prevents normal bytecode-cache writes during imports. Explicit compilation should be excluded from strictly read-only reviews.
+
+### **F11 — Agent instructions lack a review-only workflow**
+
+Low
+
+Agent operations · Confirmed documentation gap
+
+**Affected file:** `AGENTS.md`, lines 26–37.
+
+**Evidence:**
+
+```
+- Run all unit tests after each change.
+- Preserve AC1–AC5.
+- Add a regression test when fixing a confirmed defect.
+- Review the diff before accepting any AI-generated change.
+```
+
+The document provides instructions for implementing and reviewing changes but does not explicitly distinguish review-only tasks from modification tasks.&#x20;
+
+AGENTS(1).md
+
+
+
+**Impact:** An insufficiently controlled agent could interpret an identified defect as authorization to modify the implementation or add regression tests.
+
+This is a potential operational risk, not evidence that an agent has already performed unauthorized modifications.
+
+**Verification method:** Inspect `AGENTS.md` for an explicit review-only procedure and file-modification restrictions applicable to review tasks.
+
+**Minimal recommendation:** Add a short instruction such as:
+
+```
+During read-only reviews, report findings and verification
+methods without modifying files. Apply fixes only after
+explicit human approval.
+```
+
+## **4. Positive review findings**
+
+The following aspects of the implementation are correctly designed based on static inspection.
+
+| Aspect                     | Assessment                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| AC1 — Time validation      | Correct for valid numeric inputs                                                          |
+| AC2 — Maximum duration     | Correctly permits exactly 120 minutes                                                     |
+| AC3 — Blocked rooms        | Correct for Boolean inputs                                                                |
+| AC4 — Overlapping bookings | Correct interval-overlap logic                                                            |
+| AC4 — Touching endpoints   | Correctly permitted                                                                       |
+| AC5 — Read-only behavior   | No explicit mutation of existing booking lists                                            |
+| Dependencies               | Standard-library-only implementation                                                      |
+| Performance                | O(n) time and O(1) auxiliary space for ordinary booking lists                             |
+| Architecture               | Simple separation of implementation and tests                                             |
+| Agent safety               | Explicit restrictions on secrets, deployment, destructive commands and dependency changes |
+
+In particular, the overlap condition is correct and should be preserved:
+
+```
+if start < booked_end and end > booked_start:    return False
+```
+
+Using strict inequalities allows bookings to touch at their endpoints without being classified as overlapping.&#x20;
+
+booking.py
+
+
+
+## **5. Findings distribution**
+
+Correctness
+
+4
+
+Maintainability
+
+2
+
+Agent operations
+
+2
+
+Security
+
+1
+
+Testing
+
+1
+
+Dependencies
+
+1
+
+Total findings
+
+# **11**
+
+Categories
+
+# **6**
+
+High severity
+
+# **0**
+
+## **6. Review limitations and compliance**
+
+| Requirement                                    | Status                   |
+| ---------------------------------------------- | ------------------------ |
+| Identify at least seven candidate findings     | Satisfied — 11 findings  |
+| Cover at least three categories                | Satisfied — 6 categories |
+| Provide code evidence                          | Satisfied                |
+| Explain impact                                 | Satisfied                |
+| Provide reproduction or verification methods   | Satisfied                |
+| Provide minimal recommendations                | Satisfied                |
+| Distinguish confirmed evidence from hypotheses | Satisfied                |
+| Preserve project scope                         | Satisfied                |
+| Do not modify files                            | Satisfied                |
+| Do not invent test results                     | Satisfied                |
+| Do not install dependencies                    | Satisfied                |
+
+**Execution status:** All four supplied files were inspected. No tests, compilation, dependency installation or deployment commands were executed. The reproduction outcomes are static predictions, not observed execution results.
+
+The full repository, Git history, proposed diff and upstream input-validation mechanisms were not provided. Therefore, repository-wide compliance and external exploitability cannot be verified.
+
+## **7. Conclusion**
+
+The Smart Campus Room Availability project demonstrates a simple and maintainable implementation of its documented booking rules. No definite violation of AC1–AC5 was identified for valid inputs.
+
+The review identified 11 candidate findings across six categories. The most significant concerns relate to input validation, malformed booking records and missing regression coverage. Additional improvements concern documentation, reproducibility and agent operational safety.
+
+Before implementing validation changes, the intended input contract should be clarified to avoid expanding the project beyond its current requirements.
+
+**No files were modified, and no test execution results were fabricated.**
+````
 
 ### 5.2 The findings, investigated
 
 At least **five**, across at least **three** categories: `correctness`, `maintainability`, `security`,
 `dependency`, `agent operations`. **Label:** `confirmed`, `plausible` or `unsupported`.
 
+The labels below come from local verification, not the reviewer's labels. A confirmed behavior on malformed input does not establish a violation for valid inputs. The malformed-input contract needs agreement before implementing stricter validation.
+
 | # | Finding (short) | Category | What I opened or ran | Label | Evidence or why not |
 | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | F01: a string start raises an exception. | correctness | Read `project/booking.py:2`; ran the string-start probe below. | confirmed | Observed `TypeError` instead of a Boolean. Caller validation and supported malformed-input behavior are not documented. |
+| 2 | F02: negative current time is accepted. | correctness | Read `project/booking.py:2–5`; called `can_book(60, 120, -10, False, [])`. | confirmed | Observed `True`; no range check on `now`. This confirms missing validation, not a valid-input regression. |
+| 3 | F03: NaN could bypass a time gate exposed to untrusted callers. | security | Read `project/booking.py:4`; ran the NaN probe; inspected the supplied project files. | plausible | The call returned `True`, confirming the numerical behavior. No API or untrusted input path exists in the supplied project, so external exploitability remains unverified. |
+| 4 | F04: malformed existing records are not validated. | correctness | Read `project/booking.py:10–12`; ran both existing-record probes. | confirmed | `[(700,)]` raised `ValueError`; reversed `[(650, 610)]` returned `False` without distinguishing malformed data from a real overlap. |
+| 5 | F05: blocked status uses truthiness rather than a Boolean check. | correctness | Read `project/booking.py:8`; ran string and None probes. | confirmed | String `'False'` returned `False`; `None` returned `True`. These inputs are not specified by the current contract. |
+| 6 | F06: parameter types and invalid-input behavior are undocumented. | maintainability | Read all of `project/booking.py` and `project/README.md`. | confirmed | No docstring or annotations at `booking.py:1`. README describes rules and minute units but not all five parameter types or exception/rejection behavior. |
+| 7 | F07: no regression coverage for malformed inputs. | correctness | Inspected every method in `project/test_booking.py:7–169`. | confirmed | The 32 tests cover boundaries and normal rules, but not strings, negative/NaN `now`, or malformed booking tuples. Add expectations only after agreeing the input contract. |
+| 8 | F08: two pairs of tests repeat identical calls and assertions. | maintainability | Compared `project/test_booking.py:7–15` with lines 147–155. | confirmed | Touching-end and Boolean-true tests use the same arguments and `assertIs(..., True)`; partial-overlap and Boolean-false tests likewise duplicate each other. This is minor duplication, not missing AC4/AC5 coverage. |
+| 9 | F09: verified Python version is not documented. | dependency | Read README Requirements and AGENTS Setup; printed the running interpreter version below. | confirmed | Both say Python 3; the actual interpreter was 3.13.5. No incompatibility was reproduced and there are no third-party dependencies to pin. |
+| 10 | F10: approved commands could write cache files during a strict read-only review. | agent operations | Inspected `project/AGENTS.md` → Safe Commands; local probes used `py -B`. | plausible | Normal tests and explicit compilation are listed without a read-only distinction. No before/after filesystem experiment with those commands was performed in this review; Git alone does not prove absence of ignored-file writes. |
+| 11 | F11: instructions lack a review-only procedure. | agent operations | Read the complete `project/AGENTS.md`, especially Test Expectations and Forbidden Actions. | confirmed | No explicit review-only mode or rule to defer fixes until authorized. No actual unauthorized edit was observed; that consequence is hypothetical. |
+
+The reviewer did not claim touching-endpoint tests were absent. They exist at `project/test_booking.py:7`, `:112`, and `:132`; a missing-touching-test claim would be unsupported.
+
+Local reproduction evidence (2026-11-28): run from `sis-05/project/`. The script was passed to `py -B -c $verificationCode` using a PowerShell literal here-string; it was not saved as a project file. The exceptions are caught to report each probe, so exit code 0 means the probe script completed, not that malformed-input behavior passed an agreed contract.
+
+```python
+import sys
+from booking import can_book
+print('Python: ' + sys.version.split()[0])
+cases = [
+    ('F01 string start', ('660', 720, 540, False, [])),
+    ('F02 negative now', (60, 120, -10, False, [])),
+    ('F03 NaN now', (600, 660, float('nan'), False, [])),
+    ('F04 short record', (600, 660, 540, False, [(700,)])),
+    ('F04 reversed record', (600, 660, 540, False, [(650, 610)])),
+    ('F05 string False', (600, 660, 540, 'False', [])),
+    ('F05 None', (600, 660, 540, None, [])),
+]
+for label, args in cases:
+    try:
+        print(label + ': ' + repr(can_book(*args)))
+    except Exception as exc:
+        print(label + ': ' + type(exc).__name__ + ': ' + str(exc))
+```
+
+Full observed output:
+
+```text
+Python: 3.13.5
+F01 string start: TypeError: '<=' not supported between instances of 'int' and 'str'
+F02 negative now: True
+F03 NaN now: True
+F04 short record: ValueError: not enough values to unpack (expected 2, got 1)
+F04 reversed record: False
+F05 string False: False
+F05 None: True
+```
 
 ---
 
@@ -264,20 +835,22 @@ At least **five**, across at least **three** categories: `correctness`, `maintai
 At least five risks, at least two `confirmed`. **Component:** a path in `project/`, or
 `missing: <check>`. **Score = L × I.**
 
+These scores are proposed prioritization for this small local library, for the student developer to review. L is likelihood of the event (1 unlikely, 2 possible, 3 likely); I is impact (1 minor, 2 moderate, 3 serious). They are judgments, not measured probabilities. A confirmed status refers to the observed condition; the consequence is a possible future event. No public service, secret exposure, or real booking mutation was demonstrated.
+
 | ID | Category | Cause → event → consequence | Component | Evidence | Status | L | I | Score | Mitigation | Owner | Verification plan |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R1 | | | | | | | | | | | |
-| R2 | | | | | | | | | | | |
-| R3 | | | | | | | | | | | |
-| R4 | | | | | | | | | | | |
-| R5 | | | | | | | | | | | |
+| R1 | correctness | Scalar inputs lack a defined validation boundary → a caller supplies a string time, invalid now, or non-Boolean blocked value → the check raises or gives an unintended decision. | `project/booking.py:1–9`; `project/test_booking.py` | §5.2 F01/F02/F03/F05: TypeError for string start, True for negative/NaN now, truthiness for blocked; F07 has no malformed-input tests. | confirmed | 2 | 2 | 4 | Agree and document scalar types/ranges and invalid-input behavior; validate at the function boundary without changing its signature or valid-input rules. | Student developer | Add R1 regressions for the agreed invalid scalar cases; record FAIL before the fix and PASS after; run all 32 baseline tests for AC1–AC5. |
+| R2 | correctness | Existing records are unpacked and compared without validation → malformed upstream booking data reaches the function → an exception or misleading availability decision occurs. | `project/booking.py:10–12`; `project/test_booking.py` | §5.2 F04: one-element tuple raised ValueError; reversed tuple was treated as an overlap. | confirmed | 2 | 2 | 4 | Define the existing-booking record contract and reject malformed records consistently; preserve touching-endpoint logic and input immutability. | Student developer | Add R2 tests for wrong tuple length, reversed records, and invalid endpoint types; show FAIL then PASS; rerun overlap, touching, and non-mutation tests. |
+| R3 | maintainability | Parameter and failure contracts are missing from documentation → a maintainer or agent makes a different input assumption → changes become inconsistent with callers. | `project/booking.py:1`; `project/README.md` | §5.2 F06: no docstring, parameter specification, or invalid-input policy. | confirmed | 2 | 1 | 2 | Document all five parameters and agreed invalid-input handling, keeping documentation consistent with R1/R2. | Student developer | Review the docstring/README against implementation and regression expectations; retain the existing signature and AC1–AC5. |
+| R4 | dependency | Requirements only say Python 3 → a contributor uses an unverified interpreter → results may be harder to reproduce or diagnose. | `project/README.md` → Requirements; `project/AGENTS.md` → Setup | §5.2 F09: locally verified version is 3.13.5, absent from both documents; no version failure was observed. | confirmed | 1 | 1 | 1 | Record the tested Python version; claim minimum-version support only after testing it. No new dependency is needed. | Student developer | Compare documented tested version with interpreter output and run the suite on that version. |
+| R5 | agent operations | Agent instructions do not distinguish review from editing → an agent treats a review finding as permission to fix → the reviewed tree changes before human acceptance. | `project/AGENTS.md` → Test Expectations / Forbidden Actions | §5.2 F11: no explicit review-only workflow. Current verification left Git clean; unauthorized edits were not observed. | confirmed | 1 | 2 | 2 | Add a review-only procedure with permitted inspections, no file changes, before/after status, and explicit authorization before fixes. Distinguish safe commands from strictly read-only commands. | Student developer | Inspect the updated instructions and perform a review-only dry run; compare Git status and relevant file contents before and after. |
 
 ### 6.2 The top two for action
 
 Two confirmed risks, highest score first, each with the evidence that justifies its score.
 
-1. **R?** —
-2. **R?** —
+1. **R1** — L=2, I=2, score 4. The probes reproduced an exception and acceptance of invalid current times. A malformed caller value is possible, and losing a Boolean decision or accepting invalid time is a moderate functional impact. There is no deployed interface to justify a higher security impact. Scalar inputs affect every call, so R1 comes first.
+2. **R2** — L=2, I=2, score 4. Malformed records caused an unpacking exception or an ambiguous rejection. Future caller-supplied records could trigger this, with a moderate impact on availability checking. It ties with R1 but concerns the existing-bookings collection specifically; keep its mitigation and regression evidence separate.
 
 ---
 
@@ -289,26 +862,28 @@ Two confirmed risks, highest score first, each with the evidence that justifies 
 
 | Row | What | yes / no | Evidence |
 | --- | --- | --- | --- |
-| 1a | Tests, one command | | |
-| 1b | Lint or type check | | |
-| 1c | Build or run from a clean copy | | |
-| 1d | Pinned dependencies | | |
-| 2a | README accurate | | |
-| 2b | Reproducible setup | | |
-| 2c | `AGENTS.md` with safe commands and forbidden actions | | |
-| 3a | CI | | |
-| 3b | Logging an agent can read | | |
-| 3c | Security safeguards | | |
-| 3d | Review gate before merge | | |
+| 1a | Tests, one command | yes | `py -m unittest -v` passed 32 baseline tests (§2.3); `py -B -m unittest -v` also passes after R1 (§8.1). |
+| 1b | Lint or type check | no | No configured lint/type command. `py_compile` only checks syntax. |
+| 1c | Build or run from a clean copy | yes | Copied only `booking.py` into a new temporary directory and ran the touching-endpoint call with Python 3.13.5: `Clean-copy run: True`, `Exit: 0`. |
+| 1d | Pinned dependencies | yes | `booking.py` has no external imports; tests use standard-library `unittest`. No third-party dependencies need pinning. |
+| 2a | README accurate | yes | `project/README.md` describes the actual files and booking rules; its test command passed (§2.3). |
+| 2b | Reproducible setup | no | README says only Python 3; verified version 3.13.5 and an interpreter setup procedure are not documented (R4). |
+| 2c | `AGENTS.md` with safe commands and forbidden actions | yes | `project/AGENTS.md` contains all seven headings and prohibitions on secrets, deployment, destructive commands, and unreviewed dependency changes. |
+| 3a | CI | no | `Test-Path -LiteralPath '.github/workflows'` returned `False`; no automatic push checks demonstrated. |
+| 3b | Logging an agent can read | no | `can_book` returns only a Boolean and has no diagnostic messages. Verbose test output exists, but does not explain a rejected runtime request. |
+| 3c | Security safeguards | yes | Local function has no network, credential, or persistence operations; `AGENTS.md` forbids committing secrets and production deployment. These are limited local safeguards, not a security certification. |
+| 3d | Review gate before merge | no | `AGENTS.md` asks for diff review but does not require human approval before merge; no enforced repository gate was verified. |
 
 ### 7.2 The level and the missing evidence
 
-**Level:** (0, 1, 2 or 3 — by the 80% rule)
+**Level:** 0
 
 **Missing evidence for the next level:**
 
 <!-- Name the rows and what would have to exist. -->
--
+- Level 1: 3/4 yes; ceil(0.8 × 4) = 4 required. Row 1b needs a configured, passing linter or type checker.
+- Level 2: 2/3 yes; 3 required, after Level 1. Row 2b lacks a documented reproducible interpreter setup.
+- Level 3: 1/4 yes; 4 required, after Level 2. Rows 3a, 3b, and 3d lack CI, runtime diagnostics, and a verified human merge gate.
 
 ---
 
@@ -316,20 +891,297 @@ Two confirmed risks, highest score first, each with the evidence that justifies 
 
 ### 8.1 The first mitigation
 
-**Risk:** R?
+**Risk:** R1
 
 **What I changed, and what I rejected from the assistant's proposal:**
+
+Added scalar validation: integer minute values (excluding Boolean values), now within 0–1440, and a Boolean blocked flag. Invalid inputs return False. The docstring records this policy; three `test_R1_` methods cover the malformed inputs. Chose function-boundary validation instead of leaving it to unspecified callers. No coercion, new dependencies, or signature changes.
 
 The test that fails before the fix (or why a test is not feasible):
 
 ```text
-(paste here)
+test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) ... 
+  test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=None) ... FAIL
+  test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=0) ... FAIL
+  test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=[]) ... FAIL
+  test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked={}) ... FAIL
+test_R1_now_outside_day_rejected (test_booking.BookingTests.test_R1_now_outside_day_rejected) ... 
+  test_R1_now_outside_day_rejected (test_booking.BookingTests.test_R1_now_outside_day_rejected) (now=-1) ... FAIL
+test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) ... 
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value='600') ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value=None) ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value=600.5) ... FAIL
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value='600') ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value=None) ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value=600.5) ... FAIL
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value='600') ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=None) ... ERROR
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=True) ... FAIL
+  test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=nan) ... FAIL
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value='600')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 2, in can_book
+    if not (0 <= start < end <= 1440):
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'int' and 'str'
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 2, in can_book
+    if not (0 <= start < end <= 1440):
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'int' and 'NoneType'
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value='600')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 2, in can_book
+    if not (0 <= start < end <= 1440):
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'str'
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 2, in can_book
+    if not (0 <= start < end <= 1440):
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'NoneType'
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value='600')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 4, in can_book
+    if start <= now:
+       ^^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'int' and 'str'
+
+======================================================================
+ERROR: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+                  ~~~~~~~~^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 4, in can_book
+    if start <= now:
+       ^^^^^^^^^^^^
+TypeError: '<=' not supported between instances of 'int' and 'NoneType'
+
+======================================================================
+FAIL: test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 23, in test_R1_blocked_must_be_boolean
+    self.assertIs(can_book(600, 660, 540, blocked, []), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 23, in test_R1_blocked_must_be_boolean
+    self.assertIs(can_book(600, 660, 540, blocked, []), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 23, in test_R1_blocked_must_be_boolean
+    self.assertIs(can_book(600, 660, 540, blocked, []), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) (blocked={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 23, in test_R1_blocked_must_be_boolean
+    self.assertIs(can_book(600, 660, 540, blocked, []), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_now_outside_day_rejected (test_booking.BookingTests.test_R1_now_outside_day_rejected) (now=-1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 18, in test_R1_now_outside_day_rejected
+    self.assertIs(can_book(600, 660, now, False, []), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=0, value=600.5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=1, value=600.5)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) (field=2, value=nan)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 13, in test_R1_time_types_rejected
+    self.assertIs(can_book(*args), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.018s
+
+FAILED (failures=9, errors=6)
 ```
+
+Before: `py -B -m unittest -v -k test_R1_`, exit 1. Subtests produced 9 failures and 6 errors across three test methods.
 
 The diff (`git diff`):
 
 ```text
-(paste here)
+diff --git a/sis-05/project/booking.py b/sis-05/project/booking.py
+index 051ed6d..d1734a7 100644
+--- a/sis-05/project/booking.py
++++ b/sis-05/project/booking.py
+@@ -1,4 +1,13 @@
+ def can_book(start, end, now, blocked, existing):
++    """Check availability using integer minutes and a Boolean blocked flag.
++
++    start/end describe a same-day interval; now must be within 0..1440.
++    Invalid scalar inputs return False. Existing bookings are not mutated.
++    """
++    if any(type(value) is not int for value in (start, end, now)):
++        return False
++    if type(blocked) is not bool or not 0 <= now <= 1440:
++        return False
+     if not (0 <= start < end <= 1440):
+         return False
+     if start <= now:
+@@ -10,4 +19,4 @@ def can_book(start, end, now, blocked, existing):
+     for booked_start, booked_end in existing:
+         if start < booked_end and end > booked_start:
+             return False
+-    return True
+\ No newline at end of file
++    return True
+diff --git a/sis-05/project/test_booking.py b/sis-05/project/test_booking.py
+index 81e712e..2c8d65d 100644
+--- a/sis-05/project/test_booking.py
++++ b/sis-05/project/test_booking.py
+@@ -4,6 +4,24 @@ from booking import can_book
+ 
+ class BookingTests(unittest.TestCase):
+ 
++    def test_R1_time_types_rejected(self):
++        for field in range(3):
++            for value in ("600", None, True, 600.5, float("nan"), float("inf")):
++                args = [600, 660, 540, False, []]
++                args[field] = value
++                with self.subTest(field=field, value=value):
++                    self.assertIs(can_book(*args), False)
++
++    def test_R1_now_outside_day_rejected(self):
++        for now in (-1, 1441):
++            with self.subTest(now=now):
++                self.assertIs(can_book(600, 660, now, False, []), False)
++
++    def test_R1_blocked_must_be_boolean(self):
++        for blocked in (None, 0, 1, "False", [], {}):
++            with self.subTest(blocked=blocked):
++                self.assertIs(can_book(600, 660, 540, blocked, []), False)
++
+     def test_touching_end_is_allowed(self):
+         # AC4: expected result follows the specification, not code output.
+         result = can_book(660, 720, 540, False, [(600, 660)])
+```
+
+After: `py -B -m unittest -v`, exit 0; all 32 original tests and three R1 tests passed.
+
+```text
+test_119_minutes_allowed (test_booking.BookingTests.test_119_minutes_allowed) ... ok
+test_121_minutes_rejected (test_booking.BookingTests.test_121_minutes_rejected) ... ok
+test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) ... ok
+test_R1_now_outside_day_rejected (test_booking.BookingTests.test_R1_now_outside_day_rejected) ... ok
+test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) ... ok
+test_accepted_existing_list_unchanged (test_booking.BookingTests.test_accepted_existing_list_unchanged) ... ok
+test_blocked_room_rejected (test_booking.BookingTests.test_blocked_room_rejected) ... ok
+test_blocked_with_empty_bookings_rejected (test_booking.BookingTests.test_blocked_with_empty_bookings_rejected) ... ok
+test_contains_existing_rejected (test_booking.BookingTests.test_contains_existing_rejected) ... ok
+test_empty_existing_allowed (test_booking.BookingTests.test_empty_existing_allowed) ... ok
+test_end_after_1440_rejected (test_booking.BookingTests.test_end_after_1440_rejected) ... ok
+test_end_at_1440_allowed (test_booking.BookingTests.test_end_at_1440_allowed) ... ok
+test_entirely_inside_rejected (test_booking.BookingTests.test_entirely_inside_rejected) ... ok
+test_exactly_120_minutes_allowed (test_booking.BookingTests.test_exactly_120_minutes_allowed) ... ok
+test_free_gap_among_three_allowed (test_booking.BookingTests.test_free_gap_among_three_allowed) ... ok
+test_identical_interval_rejected (test_booking.BookingTests.test_identical_interval_rejected) ... ok
+test_negative_start_rejected (test_booking.BookingTests.test_negative_start_rejected) ... ok
+test_one_minute_after_now_allowed (test_booking.BookingTests.test_one_minute_after_now_allowed) ... ok
+test_one_minute_duration_allowed (test_booking.BookingTests.test_one_minute_duration_allowed) ... ok
+test_overlap_second_booking_rejected (test_booking.BookingTests.test_overlap_second_booking_rejected) ... ok
+test_partial_overlap_on_start_rejected (test_booking.BookingTests.test_partial_overlap_on_start_rejected) ... ok
+test_partial_overlap_rejected (test_booking.BookingTests.test_partial_overlap_rejected) ... ok
+test_past_start_rejected (test_booking.BookingTests.test_past_start_rejected) ... ok
+test_rejected_existing_list_unchanged (test_booking.BookingTests.test_rejected_existing_list_unchanged) ... ok
+test_return_bool_false (test_booking.BookingTests.test_return_bool_false) ... ok
+test_return_bool_true (test_booking.BookingTests.test_return_bool_true) ... ok
+test_reversed_times_rejected (test_booking.BookingTests.test_reversed_times_rejected) ... ok
+test_start_at_zero_now_zero_rejected (test_booking.BookingTests.test_start_at_zero_now_zero_rejected) ... ok
+test_start_equal_now_rejected (test_booking.BookingTests.test_start_equal_now_rejected) ... ok
+test_start_one_now_zero_allowed (test_booking.BookingTests.test_start_one_now_zero_allowed) ... ok
+test_touch_both_neighbours_allowed (test_booking.BookingTests.test_touch_both_neighbours_allowed) ... ok
+test_touch_existing_start_allowed (test_booking.BookingTests.test_touch_existing_start_allowed) ... ok
+test_touching_end_is_allowed (test_booking.BookingTests.test_touching_end_is_allowed) ... ok
+test_unsorted_existing_second_overlap_rejected (test_booking.BookingTests.test_unsorted_existing_second_overlap_rejected) ... ok
+test_zero_length_rejected (test_booking.BookingTests.test_zero_length_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.001s
+
+OK
 ```
 
 ### 8.2 The second mitigation
