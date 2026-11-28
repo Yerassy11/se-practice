@@ -4,6 +4,29 @@ from booking import can_book
 
 class BookingTests(unittest.TestCase):
 
+    def test_R2_collection_type_rejected(self):
+        for existing in (None, 7, "", {}, iter([])):
+            with self.subTest(existing=existing):
+                self.assertIs(can_book(600, 660, 540, False, existing), False)
+
+    def test_R2_record_shape_rejected(self):
+        for record in (None, 7, "12", (), (700,), (700, 760, 800)):
+            with self.subTest(record=record):
+                self.assertIs(can_book(600, 660, 540, False, [record]), False)
+
+    def test_R2_invalid_record_endpoints_rejected(self):
+        for record in ((900, 800), (800, 800), (-1, 30), (1400, 1441),
+                       ("700", 760), (700, None), (700.5, 760),
+                       (True, 60), (float("nan"), 760)):
+            with self.subTest(record=record):
+                self.assertIs(can_book(600, 660, 540, False, [record]), False)
+
+    def test_R2_valid_tuple_collection_is_unchanged(self):
+        existing = ([540, 600], (660, 720))
+        snapshot = ([540, 600], (660, 720))
+        self.assertIs(can_book(600, 660, 500, False, existing), True)
+        self.assertEqual(existing, snapshot)
+
     def test_R1_time_types_rejected(self):
         for field in range(3):
             for value in ("600", None, True, 600.5, float("nan"), float("inf")):

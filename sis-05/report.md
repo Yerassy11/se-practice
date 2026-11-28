@@ -1186,44 +1186,407 @@ OK
 
 ### 8.2 The second mitigation
 
-**Risk:** R?
+**Risk:** R2
 
 **What I changed, and what I rejected from the assistant's proposal:**
+
+Validate the collection and each record before unpacking/comparing: built-in lists/tuples only, exactly two integer endpoints, and 0 <= booked_start < booked_end <= 1440. Invalid records return False. Added four `test_R2_` methods and documented the contract. Chose local validation rather than trusting undocumented caller validation. Rejected coercion, sorting, and iterator support to preserve input integrity and keep the fix focused.
 
 The test that fails before the fix (or why a test is not feasible):
 
 ```text
-(paste here)
+test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) ... 
+  test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=None) ... ERROR
+  test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=7) ... ERROR
+  test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing='') ... FAIL
+  test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing={}) ... FAIL
+  test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=<list_iterator object at 0x0000011AC1DE9E70>) ... FAIL
+test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) ... 
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(900, 800)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(800, 800)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(-1, 30)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(1400, 1441)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=('700', 760)) ... ERROR
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(700, None)) ... ERROR
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(700.5, 760)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(True, 60)) ... FAIL
+  test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(nan, 760)) ... FAIL
+test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) ... 
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=None) ... ERROR
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=7) ... ERROR
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record='12') ... ERROR
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=()) ... ERROR
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=(700,)) ... ERROR
+  test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=(700, 760, 800)) ... ERROR
+test_R2_valid_tuple_collection_is_unchanged (test_booking.BookingTests.test_R2_valid_tuple_collection_is_unchanged) ... ok
+
+======================================================================
+ERROR: test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 10, in test_R2_collection_type_rejected
+    self.assertIs(can_book(600, 660, 540, False, existing), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+                                    ^^^^^^^^
+TypeError: 'NoneType' object is not iterable
+
+======================================================================
+ERROR: test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=7)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 10, in test_R2_collection_type_rejected
+    self.assertIs(can_book(600, 660, 540, False, existing), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+                                    ^^^^^^^^
+TypeError: 'int' object is not iterable
+
+======================================================================
+ERROR: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=('700', 760))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 20, in can_book
+    if start < booked_end and end > booked_start:
+                              ^^^^^^^^^^^^^^^^^^
+TypeError: '>' not supported between instances of 'int' and 'str'
+
+======================================================================
+ERROR: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(700, None))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 20, in can_book
+    if start < booked_end and end > booked_start:
+       ^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'NoneType'
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable NoneType object
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=7)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable int object
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record='12')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 20, in can_book
+    if start < booked_end and end > booked_start:
+       ^^^^^^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'int' and 'str'
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=())
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 0)
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=(700,))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 2, got 1)
+
+======================================================================
+ERROR: test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) (record=(700, 760, 800))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 15, in test_R2_record_shape_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\booking.py", line 19, in can_book
+    for booked_start, booked_end in existing:
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)
+
+======================================================================
+FAIL: test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 10, in test_R2_collection_type_rejected
+    self.assertIs(can_book(600, 660, 540, False, existing), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 10, in test_R2_collection_type_rejected
+    self.assertIs(can_book(600, 660, 540, False, existing), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) (existing=<list_iterator object at 0x0000011AC1DE9E70>)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 10, in test_R2_collection_type_rejected
+    self.assertIs(can_book(600, 660, 540, False, existing), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(900, 800))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(800, 800))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(-1, 30))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(1400, 1441))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(700.5, 760))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(True, 60))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+======================================================================
+FAIL: test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) (record=(nan, 760))
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Acer\Desktop\SE\sis-05\project\test_booking.py", line 22, in test_R2_invalid_record_endpoints_rejected
+    self.assertIs(can_book(600, 660, 540, False, [record]), False)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not False
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.017s
+
+FAILED (failures=10, errors=10)
 ```
+
+Before: `py -B -m unittest -v -k test_R2_`, exit 1; 10 failures and 10 errors in subtests across four test methods.
 
 The diff (`git diff`):
 
 ```text
-(paste here)
+diff --git a/sis-05/project/booking.py b/sis-05/project/booking.py
+index d1734a7..60a25e7 100644
+--- a/sis-05/project/booking.py
++++ b/sis-05/project/booking.py
+@@ -2,7 +2,9 @@ def can_book(start, end, now, blocked, existing):
+     """Check availability using integer minutes and a Boolean blocked flag.
+ 
+     start/end describe a same-day interval; now must be within 0..1440.
+-    Invalid scalar inputs return False. Existing bookings are not mutated.
++    existing must be a list/tuple of two-item lists/tuples containing integer
++    endpoints with 0 <= booked_start < booked_end <= 1440. Invalid inputs
++    return False. Existing bookings are not mutated or reordered.
+     """
+     if any(type(value) is not int for value in (start, end, now)):
+         return False
+@@ -16,7 +18,16 @@ def can_book(start, end, now, blocked, existing):
+         return False
+     if blocked:
+         return False
+-    for booked_start, booked_end in existing:
++    if type(existing) not in (list, tuple):
++        return False
++    for record in existing:
++        if type(record) not in (list, tuple) or len(record) != 2:
++            return False
++        booked_start, booked_end = record
++        if type(booked_start) is not int or type(booked_end) is not int:
++            return False
++        if not 0 <= booked_start < booked_end <= 1440:
++            return False
+         if start < booked_end and end > booked_start:
+             return False
+     return True
+diff --git a/sis-05/project/test_booking.py b/sis-05/project/test_booking.py
+index 2c8d65d..5f07c4d 100644
+--- a/sis-05/project/test_booking.py
++++ b/sis-05/project/test_booking.py
+@@ -4,6 +4,29 @@ from booking import can_book
+ 
+ class BookingTests(unittest.TestCase):
+ 
++    def test_R2_collection_type_rejected(self):
++        for existing in (None, 7, "", {}, iter([])):
++            with self.subTest(existing=existing):
++                self.assertIs(can_book(600, 660, 540, False, existing), False)
++
++    def test_R2_record_shape_rejected(self):
++        for record in (None, 7, "12", (), (700,), (700, 760, 800)):
++            with self.subTest(record=record):
++                self.assertIs(can_book(600, 660, 540, False, [record]), False)
++
++    def test_R2_invalid_record_endpoints_rejected(self):
++        for record in ((900, 800), (800, 800), (-1, 30), (1400, 1441),
++                       ("700", 760), (700, None), (700.5, 760),
++                       (True, 60), (float("nan"), 760)):
++            with self.subTest(record=record):
++                self.assertIs(can_book(600, 660, 540, False, [record]), False)
++
++    def test_R2_valid_tuple_collection_is_unchanged(self):
++        existing = ([540, 600], (660, 720))
++        snapshot = ([540, 600], (660, 720))
++        self.assertIs(can_book(600, 660, 500, False, existing), True)
++        self.assertEqual(existing, snapshot)
++
+     def test_R1_time_types_rejected(self):
+         for field in range(3):
+             for value in ("600", None, True, 600.5, float("nan"), float("inf")):
 ```
+
+After: all four R2 methods, three R1 methods, and 32 original tests passed in the full run below.
 
 ### 8.3 The final checks
 
 The real output of the final test run (and any other check you ran):
 
 ```text
-(paste here)
+test_119_minutes_allowed (test_booking.BookingTests.test_119_minutes_allowed) ... ok
+test_121_minutes_rejected (test_booking.BookingTests.test_121_minutes_rejected) ... ok
+test_R1_blocked_must_be_boolean (test_booking.BookingTests.test_R1_blocked_must_be_boolean) ... ok
+test_R1_now_outside_day_rejected (test_booking.BookingTests.test_R1_now_outside_day_rejected) ... ok
+test_R1_time_types_rejected (test_booking.BookingTests.test_R1_time_types_rejected) ... ok
+test_R2_collection_type_rejected (test_booking.BookingTests.test_R2_collection_type_rejected) ... ok
+test_R2_invalid_record_endpoints_rejected (test_booking.BookingTests.test_R2_invalid_record_endpoints_rejected) ... ok
+test_R2_record_shape_rejected (test_booking.BookingTests.test_R2_record_shape_rejected) ... ok
+test_R2_valid_tuple_collection_is_unchanged (test_booking.BookingTests.test_R2_valid_tuple_collection_is_unchanged) ... ok
+test_accepted_existing_list_unchanged (test_booking.BookingTests.test_accepted_existing_list_unchanged) ... ok
+test_blocked_room_rejected (test_booking.BookingTests.test_blocked_room_rejected) ... ok
+test_blocked_with_empty_bookings_rejected (test_booking.BookingTests.test_blocked_with_empty_bookings_rejected) ... ok
+test_contains_existing_rejected (test_booking.BookingTests.test_contains_existing_rejected) ... ok
+test_empty_existing_allowed (test_booking.BookingTests.test_empty_existing_allowed) ... ok
+test_end_after_1440_rejected (test_booking.BookingTests.test_end_after_1440_rejected) ... ok
+test_end_at_1440_allowed (test_booking.BookingTests.test_end_at_1440_allowed) ... ok
+test_entirely_inside_rejected (test_booking.BookingTests.test_entirely_inside_rejected) ... ok
+test_exactly_120_minutes_allowed (test_booking.BookingTests.test_exactly_120_minutes_allowed) ... ok
+test_free_gap_among_three_allowed (test_booking.BookingTests.test_free_gap_among_three_allowed) ... ok
+test_identical_interval_rejected (test_booking.BookingTests.test_identical_interval_rejected) ... ok
+test_negative_start_rejected (test_booking.BookingTests.test_negative_start_rejected) ... ok
+test_one_minute_after_now_allowed (test_booking.BookingTests.test_one_minute_after_now_allowed) ... ok
+test_one_minute_duration_allowed (test_booking.BookingTests.test_one_minute_duration_allowed) ... ok
+test_overlap_second_booking_rejected (test_booking.BookingTests.test_overlap_second_booking_rejected) ... ok
+test_partial_overlap_on_start_rejected (test_booking.BookingTests.test_partial_overlap_on_start_rejected) ... ok
+test_partial_overlap_rejected (test_booking.BookingTests.test_partial_overlap_rejected) ... ok
+test_past_start_rejected (test_booking.BookingTests.test_past_start_rejected) ... ok
+test_rejected_existing_list_unchanged (test_booking.BookingTests.test_rejected_existing_list_unchanged) ... ok
+test_return_bool_false (test_booking.BookingTests.test_return_bool_false) ... ok
+test_return_bool_true (test_booking.BookingTests.test_return_bool_true) ... ok
+test_reversed_times_rejected (test_booking.BookingTests.test_reversed_times_rejected) ... ok
+test_start_at_zero_now_zero_rejected (test_booking.BookingTests.test_start_at_zero_now_zero_rejected) ... ok
+test_start_equal_now_rejected (test_booking.BookingTests.test_start_equal_now_rejected) ... ok
+test_start_one_now_zero_allowed (test_booking.BookingTests.test_start_one_now_zero_allowed) ... ok
+test_touch_both_neighbours_allowed (test_booking.BookingTests.test_touch_both_neighbours_allowed) ... ok
+test_touch_existing_start_allowed (test_booking.BookingTests.test_touch_existing_start_allowed) ... ok
+test_touching_end_is_allowed (test_booking.BookingTests.test_touching_end_is_allowed) ... ok
+test_unsorted_existing_second_overlap_rejected (test_booking.BookingTests.test_unsorted_existing_second_overlap_rejected) ... ok
+test_zero_length_rejected (test_booking.BookingTests.test_zero_length_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 39 tests in 0.002s
+
+OK
+```
+
+`py -B -m unittest -v`: exit 0, 39 tests. `py -m py_compile booking.py`: exit 0, no output. `py -B -c "from booking import can_book; print(can_book(660, 720, 540, False, [(600, 660)]))"`: exit 0, output:
+
+```text
+True
 ```
 
 Tests and checks I did not run, and why:
 
 <!-- Write below this line. "None" only if it is true. -->
 
+No linter, type checker, or CI run: none is configured. No multi-version Python run: only Python 3.13.5 was verified.
+
 ### 8.4 Updated scores and what remains
 
 | ID | L before | I before | Score before | L after | I after | Score after | Evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | |
-| | | | | | | | |
+| R1 | 2 | 2 | 4 | 1 | 2 | 2 | Three R1 regression methods now pass; invalid scalars are rejected before comparisons. All 32 original tests pass. |
+| R2 | 2 | 2 | 4 | 1 | 2 | 2 | Four R2 regression methods now pass, covering malformed structures/endpoints and unchanged valid input. Final suite: 39/39. |
 
 **Remaining limitations and trade-offs:**
 
 <!-- Write below this line -->
+
+Scores reduce likelihood, not impact. Validation deliberately accepts built-in integer minutes, Boolean blocked flags, and list/tuple records; arbitrary iterators, subclasses, and fractional minutes are rejected. False does not distinguish malformed input from ordinary unavailability. R4/R5 documentation gaps and missing lint/CI remain; no production deployment is claimed.
 
 ---
 
